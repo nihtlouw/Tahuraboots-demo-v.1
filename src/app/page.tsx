@@ -94,7 +94,7 @@ export default async function HomePage() {
   };
 
   return (
-    <div id="top" className="min-h-screen bg-ink">
+    <div id="top" className="min-h-dvh bg-ink">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
@@ -175,7 +175,7 @@ export default async function HomePage() {
         target="_blank"
         rel="noreferrer"
         aria-label="Chat with the Tahura studio on WhatsApp"
-        className="group fixed bottom-5 right-5 z-40 flex items-center gap-3 border border-brass/50 bg-ink/85 px-4 py-3 text-[0.6rem] font-semibold uppercase tracking-[0.16em] text-paper shadow-[0_18px_40px_rgba(0,0,0,0.45)] backdrop-blur-md transition-colors hover:bg-brass hover:text-ink"
+        className="group fixed bottom-[calc(1rem+env(safe-area-inset-bottom,0px))] right-4 z-40 flex min-h-12 items-center gap-3 border border-brass/50 bg-ink/90 px-4 py-3 text-[0.62rem] font-semibold uppercase tracking-[0.16em] text-paper shadow-[0_18px_40px_rgba(0,0,0,0.45)] backdrop-blur-md transition-colors hover:bg-brass hover:text-ink active:bg-brass active:text-ink sm:bottom-5 sm:right-5 sm:min-h-0"
       >
         <span className="relative flex h-2 w-2">
           <span className="absolute inline-flex h-full w-full rounded-full bg-brass/80 animate-soft-pulse group-hover:bg-ink/50" />

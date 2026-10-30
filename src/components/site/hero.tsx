@@ -41,7 +41,7 @@ export function Hero() {
   const current = colorways[active];
 
   return (
-    <section className="relative overflow-hidden bg-ink pb-16 pt-[104px] sm:pt-[124px] lg:pb-20">
+    <section className="relative overflow-hidden bg-ink pb-16 pt-[calc(6.5rem+env(safe-area-inset-top,0px))] sm:pt-[124px] lg:pb-20">
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute -left-40 top-0 h-[520px] w-[520px] rounded-full bg-[radial-gradient(circle,rgba(200,162,102,0.16),transparent_65%)]" />
         <div className="absolute -right-32 top-32 h-[600px] w-[600px] rounded-full bg-[radial-gradient(circle,rgba(109,33,38,0.28),transparent_62%)]" />

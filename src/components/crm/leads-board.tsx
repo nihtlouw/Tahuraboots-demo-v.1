@@ -68,6 +68,9 @@ export function LeadsBoard({ initial }: { initial: CrmLead[] }) {
   const { toast, show: showToast, dismiss: dismissToast } = useToast();
   const [syncedInitial, setSyncedInitial] = useState(initial);
   const [weekAgo] = useState(() => Date.now() - 7 * 24 * 60 * 60 * 1000);
+  // Ponsel: satu tahap sekaligus, dipilih lewat chip di atas papan. Sebelumnya
+  // lima kolom 260px memaksa geser horizontal ~1300px.
+  const [mobileStage, setMobileStage] = useState<string>("new");
 
   // Server mengirim ulang data setelah router.refresh(); samakan state lokal
   // di fase render (pola resmi React, tanpa efek tambahan).
@@ -268,12 +271,43 @@ export function LeadsBoard({ initial }: { initial: CrmLead[] }) {
         </div>
       </div>
 
-      <div className="hide-scrollbar grid gap-3 overflow-x-auto pb-2 md:grid-cols-2 xl:grid-cols-5">
+      <div className="hide-scrollbar snap-row -mx-4 flex gap-2 overflow-x-auto px-4 pb-1 md:hidden">
+        {LEAD_STATUSES.map((stage) => {
+          const count = visibleLeads.filter((lead) => lead.status === stage).length;
+          const active = mobileStage === stage;
+          return (
+            <button
+              key={stage}
+              type="button"
+              onClick={() => setMobileStage(stage)}
+              aria-pressed={active}
+              className={`flex min-h-11 shrink-0 items-center gap-2 rounded-full border px-3.5 text-[0.7rem] font-semibold transition-colors ${
+                active
+                  ? "border-transparent bg-ink text-paper"
+                  : "border-crm-line bg-white text-[#5f5548] active:bg-[#faf6ee]"
+              }`}
+            >
+              <span className={`h-1.5 w-1.5 rounded-full ${leadStatusMeta[stage].accent}`} />
+              {leadStatusMeta[stage].label}
+              <span className={`text-[0.6rem] ${active ? "text-paper/60" : "text-[#a19683]"}`}>
+                {count}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="grid gap-3 pb-2 md:grid-cols-2 xl:grid-cols-5">
         {LEAD_STATUSES.map((stage) => {
           const stageMeta = leadStatusMeta[stage];
           const stageLeads = visibleLeads.filter((lead) => lead.status === stage);
           return (
-            <div key={stage} className="min-w-[260px] rounded-xl border border-crm-line bg-[#faf7f1]">
+            <div
+              key={stage}
+              className={`rounded-xl border border-crm-line bg-[#faf7f1] ${
+                mobileStage === stage ? "block" : "hidden"
+              } md:block`}
+            >
               <div className="flex items-center justify-between border-b border-crm-line px-3 py-2.5">
                 <span className="flex items-center gap-2 text-[0.64rem] font-semibold uppercase tracking-[0.12em] text-[#5f5548]">
                   <span className={`h-1.5 w-1.5 rounded-full ${stageMeta.accent}`} />
@@ -325,7 +359,7 @@ export function LeadsBoard({ initial }: { initial: CrmLead[] }) {
                             disabled={stageIndex === 0 || busy === lead.id}
                             onClick={() => move(lead, -1)}
                             aria-label={`Move ${lead.name} back a stage`}
-                            className="flex h-6 w-6 items-center justify-center rounded border border-crm-line text-[0.6rem] text-[#a19683] hover:bg-[#f4eee2] disabled:opacity-30"
+                            className="tap-40 flex items-center justify-center rounded border border-crm-line text-[0.75rem] text-[#a19683] active:bg-[#f4eee2] disabled:opacity-30"
                           >
                             ←
                           </button>
@@ -334,7 +368,7 @@ export function LeadsBoard({ initial }: { initial: CrmLead[] }) {
                             disabled={stageIndex === LEAD_STATUSES.length - 1 || busy === lead.id}
                             onClick={() => move(lead, 1)}
                             aria-label={`Move ${lead.name} forward a stage`}
-                            className="flex h-6 w-6 items-center justify-center rounded border border-crm-line text-[0.6rem] text-[#a19683] hover:bg-[#f4eee2] disabled:opacity-30"
+                            className="tap-40 flex items-center justify-center rounded border border-crm-line text-[0.75rem] text-[#a19683] active:bg-[#f4eee2] disabled:opacity-30"
                           >
                             →
                           </button>
@@ -342,7 +376,7 @@ export function LeadsBoard({ initial }: { initial: CrmLead[] }) {
                         <button
                           type="button"
                           onClick={() => setSelected({ ...lead })}
-                          className="rounded border border-crm-line px-2 py-1 text-[0.58rem] font-medium text-[#5f5548] hover:border-[#c6b699] hover:bg-[#faf6ee]"
+                          className="min-h-10 rounded border border-crm-line px-3 text-[0.62rem] font-medium text-[#5f5548] active:bg-[#faf6ee]"
                         >
                           Open card
                         </button>
@@ -454,7 +488,7 @@ export function LeadsBoard({ initial }: { initial: CrmLead[] }) {
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center justify-between gap-2 border-t border-crm-line px-5 py-4">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-t border-crm-line px-5 py-4 sheet-actions">
               <div className="flex flex-wrap gap-2">
                 <a
                   href={`mailto:${selected.email}?subject=${encodeURIComponent("Tahura Boots — your enquiry")}`}
@@ -509,11 +543,11 @@ export function LeadsBoard({ initial }: { initial: CrmLead[] }) {
             </div>
             <div>
               <label className="crm-label" htmlFor="new-lead-email">Email</label>
-              <input id="new-lead-email" required type="email" value={draft.email} onChange={(event) => setDraft({ ...draft, email: event.target.value })} className="crm-input" placeholder="raka@email.com" />
+              <input id="new-lead-email" required type="email" inputMode="email" autoComplete="email" autoCapitalize="none" value={draft.email} onChange={(event) => setDraft({ ...draft, email: event.target.value })} className="crm-input" placeholder="raka@email.com" />
             </div>
             <div>
               <label className="crm-label" htmlFor="new-lead-phone">Phone / WhatsApp</label>
-              <input id="new-lead-phone" value={draft.phone} onChange={(event) => setDraft({ ...draft, phone: event.target.value })} className="crm-input" placeholder="+62 812 …" />
+              <input id="new-lead-phone" type="tel" inputMode="tel" autoComplete="tel" value={draft.phone} onChange={(event) => setDraft({ ...draft, phone: event.target.value })} className="crm-input" placeholder="+62 812 …" />
             </div>
             <div>
               <label className="crm-label" htmlFor="new-lead-country">Country</label>
@@ -541,7 +575,7 @@ export function LeadsBoard({ initial }: { initial: CrmLead[] }) {
               <textarea id="new-lead-message" rows={3} value={draft.message} onChange={(event) => setDraft({ ...draft, message: event.target.value })} className="crm-input resize-none" placeholder="Size run, leather, timeline…" />
             </div>
           </div>
-          <div className="flex items-center justify-end gap-2 border-t border-crm-line px-5 py-4">
+          <div className="flex items-center justify-end gap-2 border-t border-crm-line px-5 py-4 sheet-actions">
             <button type="button" onClick={() => setCreating(false)} className="rounded-lg border border-crm-line px-4 py-2.5 text-[0.62rem] font-semibold uppercase tracking-[0.12em] text-[#7a7062]">
               Cancel
             </button>

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Crest } from "@/components/brand";
 
 const links = [
@@ -21,6 +21,22 @@ export function CrmSidebar({
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
+
+  // Drawer di ponsel: kunci scroll latar dan tutup dengan Escape, sama seperti
+  // modal lain di CRM. Sebelumnya latar tetap bisa digulir di balik drawer.
+  useEffect(() => {
+    if (!open) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = previous;
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
 
   async function signOut() {
     setSigningOut(true);
@@ -49,7 +65,7 @@ export function CrmSidebar({
             key={link.href}
             href={link.href}
             onClick={() => setOpen(false)}
-            className={`group flex items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-[0.8rem] transition-colors ${
+            className={`group flex min-h-11 items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-[0.84rem] transition-colors active:bg-paper/10 ${
               active
                 ? "bg-paper/10 text-paper"
                 : "text-paper/55 hover:bg-paper/5 hover:text-paper"
@@ -82,7 +98,7 @@ export function CrmSidebar({
 
   return (
     <>
-      <div className="sticky top-0 z-30 flex items-center justify-between border-b border-crm-line bg-crm/95 px-4 py-3 backdrop-blur lg:hidden">
+      <div className="safe-top sticky top-0 z-30 flex min-h-14 items-center justify-between border-b border-crm-line bg-crm/95 px-4 py-2 backdrop-blur lg:hidden">
         <span className="flex items-center gap-2">
           <Crest className="h-7 w-auto text-[#7a5a2e]" />
           <span className="font-display text-base tracking-[0.14em] text-[#221b15]">
@@ -92,7 +108,7 @@ export function CrmSidebar({
         <button
           type="button"
           onClick={() => setOpen((value) => !value)}
-          className="rounded-md border border-crm-line px-3 py-1.5 text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-[#5f5548]"
+          className="flex min-h-11 items-center rounded-md border border-crm-line px-3.5 text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-[#5f5548] active:bg-[#f1ebdf]"
         >
           {open ? "Close" : "Menu"}
         </button>
@@ -152,7 +168,7 @@ export function CrmSidebar({
           <div className="space-y-1">
             <Link
               href="/#collection"
-              className="flex items-center justify-between rounded-lg px-3 py-2 text-[0.78rem] text-paper/55 transition-colors hover:bg-paper/5 hover:text-paper"
+              className="flex min-h-11 items-center justify-between rounded-lg px-3 py-2 text-[0.8rem] text-paper/55 transition-colors hover:bg-paper/5 hover:text-paper active:bg-paper/10"
             >
               View storefront <span className="text-[0.65rem]">↗</span>
             </Link>
@@ -173,12 +189,12 @@ export function CrmSidebar({
           </div>
         </div>
 
-        <div className="relative border-t border-paper/10 p-4">
+        <div className="relative border-t border-paper/10 p-4 pb-[max(1rem,env(safe-area-inset-bottom,0px))]">
           <button
             type="button"
             onClick={signOut}
             disabled={signingOut}
-            className="w-full rounded-lg border border-paper/15 px-3 py-2.5 text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-paper/65 transition-colors hover:border-brass/60 hover:text-brass disabled:opacity-50"
+            className="min-h-11 w-full rounded-lg border border-paper/15 px-3 py-2.5 text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-paper/65 transition-colors hover:border-brass/60 hover:text-brass active:bg-paper/10 disabled:opacity-50"
           >
             {signingOut ? "Signing out…" : "Sign out"}
           </button>
@@ -189,8 +205,10 @@ export function CrmSidebar({
       </aside>
 
       {open && (
-        <div
-          className="fixed inset-0 z-30 bg-ink/50 backdrop-blur-sm lg:hidden"
+        <button
+          type="button"
+          aria-label="Close menu"
+          className="fixed inset-0 z-30 cursor-default bg-ink/50 backdrop-blur-sm lg:hidden"
           onClick={() => setOpen(false)}
         />
       )}

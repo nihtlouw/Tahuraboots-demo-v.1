@@ -242,7 +242,7 @@ export function Configurator() {
                         type="button"
                         onClick={() => setSoleId(item.id)}
                         aria-pressed={active}
-                        className={`flex w-full items-center justify-between border px-3 py-2.5 text-left transition-colors ${
+                        className={`flex min-h-12 w-full items-center justify-between border px-3 py-2.5 text-left transition-colors active:opacity-80 ${
                           active ? "border-brass bg-brass/[0.08]" : "border-line"
                         }`}
                       >
@@ -264,14 +264,14 @@ export function Configurator() {
               </Step>
 
               <Step label="04" title="Hardware & size">
-                <div className="flex gap-1.5">
+                <div className="grid grid-cols-3 gap-1.5">
                   {customHardware.map((item) => (
                     <button
                       key={item.id}
                       type="button"
                       onClick={() => setHardwareId(item.id)}
                       aria-pressed={item.id === hardware.id}
-                      className={`flex-1 border px-2 py-2 text-[0.56rem] uppercase tracking-[0.1em] transition-colors ${
+                      className={`min-h-11 border px-1.5 py-2 text-[0.56rem] uppercase tracking-[0.1em] transition-colors ${
                         item.id === hardware.id
                           ? "border-brass bg-brass/[0.08] text-paper"
                           : "border-line text-paper/60"
@@ -288,7 +288,7 @@ export function Configurator() {
                       type="button"
                       onClick={() => setSize(item)}
                       aria-pressed={item === size}
-                      className={`border py-2 text-[0.68rem] transition-colors ${
+                      className={`min-h-11 border text-[0.72rem] transition-colors ${
                         item === size
                           ? "border-brass bg-brass text-ink"
                           : "border-line text-paper/65 hover:border-line-soft"
@@ -464,7 +464,7 @@ export function Configurator() {
                         }
                         placeholder="Name"
                         aria-label="Your name"
-                        className="w-full border border-ink/20 bg-white px-3 py-2.5 text-[0.76rem] text-ink outline-none placeholder:text-ink/35 focus:border-brass"
+                        className="w-full border border-ink/20 bg-white px-3 py-3 text-base text-ink outline-none placeholder:text-ink/35 focus:border-brass sm:py-2.5 sm:text-[0.76rem]"
                       />
                       <input
                         value={form.country}
@@ -473,7 +473,7 @@ export function Configurator() {
                         }
                         placeholder="Country"
                         aria-label="Country"
-                        className="w-full border border-ink/20 bg-white px-3 py-2.5 text-[0.76rem] text-ink outline-none placeholder:text-ink/35 focus:border-brass"
+                        className="w-full border border-ink/20 bg-white px-3 py-3 text-base text-ink outline-none placeholder:text-ink/35 focus:border-brass sm:py-2.5 sm:text-[0.76rem]"
                       />
                     </div>
                     <input
@@ -484,12 +484,12 @@ export function Configurator() {
                       }
                       placeholder="Email"
                       aria-label="Email"
-                      className="w-full border border-ink/20 bg-white px-3 py-2.5 text-[0.76rem] text-ink outline-none placeholder:text-ink/35 focus:border-brass"
+                      className="w-full border border-ink/20 bg-white px-3 py-3 text-base text-ink outline-none placeholder:text-ink/35 focus:border-brass sm:py-2.5 sm:text-[0.76rem]"
                     />
                     <button
                       type="submit"
                       disabled={state.status === "sending"}
-                      className="flex w-full items-center justify-between bg-ink px-4 py-3.5 text-[0.64rem] font-semibold uppercase tracking-[0.18em] text-paper transition-colors hover:bg-ink-3 disabled:cursor-not-allowed disabled:opacity-60"
+                      className="flex min-h-12 w-full items-center justify-between bg-ink px-4 py-3.5 text-[0.64rem] font-semibold uppercase tracking-[0.18em] text-paper transition-colors hover:bg-ink-3 active:bg-ink-3 disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       {state.status === "sending"
                         ? "Sending to the bench…"
@@ -516,7 +516,7 @@ export function Configurator() {
                 href={whatsappHref}
                 target="_blank"
                 rel="noreferrer"
-                className="text-[0.58rem] font-semibold uppercase tracking-[0.16em] text-brass transition-colors hover:text-brass-light"
+                className="tap-40 flex items-center text-[0.6rem] font-semibold uppercase tracking-[0.16em] text-brass transition-colors hover:text-brass-light"
               >
                 WhatsApp ↗
               </a>

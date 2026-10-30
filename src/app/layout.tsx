@@ -66,9 +66,18 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0f0d0b",
+  themeColor: [
+    { media: "(prefers-color-scheme: dark)", color: "#0f0d0b" },
+    { media: "(prefers-color-scheme: light)", color: "#f5f0e7" },
+  ],
   width: "device-width",
   initialScale: 1,
+  // Layar berponi/gesture bar Android: konten boleh masuk ke area aman dan
+  // kita beri padding sendiri (utility `safe-*`).
+  viewportFit: "cover",
+  // Saat keyboard muncul, Android harus mengecilkan viewport — bukan menutupi
+  // kolom input yang sedang diisi.
+  interactiveWidget: "resizes-content",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

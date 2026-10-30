@@ -32,7 +32,7 @@ export function SiteHeader() {
   return (
     <>
       <header
-        className={`fixed inset-x-0 top-0 z-50 transition-colors duration-500 ${
+        className={`safe-top fixed inset-x-0 top-0 z-50 transition-colors duration-500 ${
           scrolled || open
             ? "border-b border-line/70 bg-ink/92 backdrop-blur-xl"
             : "border-b border-transparent"
@@ -84,7 +84,7 @@ export function SiteHeader() {
               onClick={() => setOpen((value) => !value)}
               aria-label={open ? "Close menu" : "Open menu"}
               aria-expanded={open}
-              className="flex h-11 w-11 items-center justify-center border border-paper/25 text-paper lg:hidden"
+              className="flex h-11 w-11 shrink-0 items-center justify-center border border-paper/25 text-paper transition-colors active:bg-paper/10 lg:hidden"
             >
               <span className="relative block h-3 w-4">
                 <span
@@ -113,24 +113,26 @@ export function SiteHeader() {
       </header>
 
       <div
-        className={`fixed inset-0 z-40 bg-ink transition-all duration-500 lg:hidden ${
+        className={`fixed inset-0 z-40 h-[100dvh] overflow-y-auto overscroll-contain bg-ink transition-all duration-500 lg:hidden ${
           open
             ? "pointer-events-auto opacity-100"
             : "pointer-events-none opacity-0"
         }`}
       >
         <div className="grain-layer" />
-        <div className="container-x flex h-full flex-col justify-between pb-10 pt-28">
+        {/* `justify-between` bisa memotong CTA di ponsel pendek (360×640) —
+            panel ini sekarang bisa digulir dan memberi ruang gesture bar. */}
+        <div className="container-x flex min-h-full flex-col justify-between gap-8 pb-[max(1.5rem,env(safe-area-inset-bottom,0px))] pt-[calc(5.5rem+env(safe-area-inset-top,0px))]">
           <nav className="flex flex-col">
             {navLinks.map((link, index) => (
               <a
                 key={link.href}
                 href={`/${link.href}`}
                 onClick={() => setOpen(false)}
-                className="group flex items-baseline justify-between border-b border-line/70 py-5"
+                className="group flex min-h-14 items-center justify-between gap-4 border-b border-line/70 py-4"
                 style={{ transitionDelay: `${index * 40}ms` }}
               >
-                <span className="font-display text-[2.1rem] leading-none text-paper transition-colors group-hover:text-brass">
+                <span className="font-display text-[clamp(1.6rem,8vw,2.1rem)] leading-none text-paper transition-colors group-hover:text-brass">
                   {link.label}
                 </span>
                 <span className="text-[0.6rem] uppercase tracking-[0.3em] text-mute">
@@ -144,14 +146,14 @@ export function SiteHeader() {
               href={site.whatsappHref}
               target="_blank"
               rel="noreferrer"
-              className="block bg-brass px-6 py-4 text-center text-[0.72rem] font-semibold uppercase tracking-[0.2em] text-ink"
+              className="flex min-h-12 items-center justify-center bg-brass px-6 py-4 text-center text-[0.72rem] font-semibold uppercase tracking-[0.2em] text-ink"
             >
               WhatsApp the studio
             </a>
             <Link
               href="/crm"
               onClick={() => setOpen(false)}
-              className="block border border-line px-6 py-4 text-center text-[0.72rem] font-semibold uppercase tracking-[0.2em] text-paper"
+              className="flex min-h-12 items-center justify-center border border-line px-6 py-4 text-center text-[0.72rem] font-semibold uppercase tracking-[0.2em] text-paper"
             >
               Owner CRM dashboard
             </Link>

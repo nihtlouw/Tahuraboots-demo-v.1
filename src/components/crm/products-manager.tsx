@@ -337,6 +337,8 @@ export function ProductsManager({ initial }: { initial: CrmProduct[] }) {
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Search styles, leathers…"
             aria-label="Search pairs"
+            enterKeyHint="search"
+            autoCapitalize="none"
             className="crm-input !w-full sm:!w-52"
           />
           <select
@@ -390,7 +392,7 @@ export function ProductsManager({ initial }: { initial: CrmProduct[] }) {
       <Toast toast={toast} onDismiss={dismissToast} />
 
       <div className="overflow-hidden rounded-xl border border-crm-line bg-white">
-        <div className="overflow-x-auto">
+        <div className="hidden overflow-x-auto md:block">
           <table className="w-full min-w-[940px] text-left">
             <thead>
               <tr className="border-b border-crm-line bg-[#faf7f1] text-[0.55rem] uppercase tracking-[0.14em] text-[#a19683]">
@@ -578,6 +580,172 @@ export function ProductsManager({ initial }: { initial: CrmProduct[] }) {
             </tbody>
           </table>
         </div>
+        {/* Ponsel: tabel 940px tidak mungkin dibaca tanpa geser horizontal,
+            jadi tiap pair tampil sebagai kartu dengan kontrol setinggi 44px. */}
+        <ul className="divide-y divide-crm-line/70 md:hidden">
+          {filtered.map((product) => {
+            const availability = resolveAvailability(product);
+            const draftValue = stockDrafts[product.id];
+            const stockValue = draftValue ?? String(product.stock);
+            const dirty = draftValue !== undefined && draftValue !== String(product.stock);
+
+            return (
+              <li key={product.id} className="p-4">
+                <div className="flex gap-3">
+                  <div className="relative h-16 w-12 shrink-0 overflow-hidden rounded-md bg-[#f1ebdf]">
+                    <Image src={product.imageUrl} alt="" fill sizes="48px" className="object-cover" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="min-w-0 truncate text-[0.86rem] font-semibold text-[#221b15]">
+                        {product.name}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => toggleFeatured(product)}
+                        disabled={busy === product.id}
+                        aria-pressed={product.featured}
+                        aria-label={
+                          product.featured
+                            ? `Remove ${product.name} from storefront picks`
+                            : `Feature ${product.name} on the storefront`
+                        }
+                        className={`tap-40 -mr-1 -mt-1 flex shrink-0 items-center justify-center rounded text-[1rem] leading-none transition-colors disabled:opacity-40 ${
+                          product.featured ? "text-[#b08c52]" : "text-[#d8d0c1]"
+                        }`}
+                      >
+                        ★
+                      </button>
+                    </div>
+                    <p className="truncate text-[0.7rem] text-[#a19683]">
+                      {product.colorway} · {product.leather}
+                    </p>
+                    <p className="mt-0.5 text-[0.6rem] uppercase tracking-[0.1em] text-[#c0b6a5]">
+                      {product.collectionName} · {sizeRange(product.sizes)}
+                    </p>
+                    <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[0.72rem]">
+                      <span className="font-semibold text-[#3c332a]">{formatIdr(product.priceIdr)}</span>
+                      <span className="text-[#8b8173]">{product.unitsSold} sold</span>
+                      {availability === "sold_out" && (
+                        <span className="rounded-full bg-[#f1dedb] px-2 py-0.5 text-[0.58rem] font-semibold uppercase tracking-[0.08em] text-[#88423a]">
+                          Shelf empty
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-3 grid grid-cols-[1fr_auto] gap-2">
+                  <select
+                    value={product.status}
+                    onChange={(event) => patch(product.id, { status: event.target.value })}
+                    disabled={busy === product.id}
+                    aria-label={`Catalogue status for ${product.name}`}
+                    className="crm-input !py-2 text-[0.82rem] font-medium"
+                  >
+                    {PRODUCT_STATUSES.map((status) => (
+                      <option key={status} value={status}>
+                        {productStatusLabels[status]}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="flex items-center gap-1 rounded-lg border border-crm-line bg-white p-0.5">
+                    <button
+                      type="button"
+                      aria-label={`Reduce stock for ${product.name}`}
+                      disabled={busy === product.id || product.stock === 0}
+                      onClick={() => {
+                        clearStockDraft(product.id);
+                        void patch(product.id, { stock: Math.max(0, product.stock - 1) });
+                      }}
+                      className="tap-40 flex items-center justify-center rounded-md text-[1rem] text-[#7a7062] active:bg-[#f4eee2] disabled:opacity-30"
+                    >
+                      −
+                    </button>
+                    <input
+                      type="number"
+                      inputMode="numeric"
+                      min={0}
+                      value={stockValue}
+                      disabled={busy === product.id}
+                      aria-label={`Stock for ${product.name}`}
+                      onChange={(event) =>
+                        setStockDrafts((current) => ({
+                          ...current,
+                          [product.id]: event.target.value,
+                        }))
+                      }
+                      onBlur={() => void commitStock(product)}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter") {
+                          event.preventDefault();
+                          (event.target as HTMLInputElement).blur();
+                        }
+                        if (event.key === "Escape") clearStockDraft(product.id);
+                      }}
+                      className={`w-12 bg-transparent text-center text-[0.86rem] font-semibold outline-none ${
+                        dirty ? "text-[#8a6a3c]" : "text-[#221b15]"
+                      }`}
+                    />
+                    <button
+                      type="button"
+                      aria-label={`Increase stock for ${product.name}`}
+                      disabled={busy === product.id}
+                      onClick={() => {
+                        clearStockDraft(product.id);
+                        void patch(product.id, { stock: product.stock + 1 });
+                      }}
+                      className="tap-40 flex items-center justify-center rounded-md text-[1rem] text-[#7a7062] active:bg-[#f4eee2] disabled:opacity-30"
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+
+                {dirty && (
+                  <p className="mt-1 text-[0.6rem] uppercase tracking-[0.08em] text-[#b08c52]">
+                    Press Enter to save stock
+                  </p>
+                )}
+
+                <div className="mt-2 grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setDraft({
+                        id: product.id,
+                        name: product.name,
+                        model: product.model,
+                        leather: product.leather,
+                        colorway: product.colorway,
+                        collectionName: product.collectionName,
+                        description: product.description,
+                        priceIdr: String(product.priceIdr),
+                        stock: String(product.stock),
+                        status: product.status,
+                        sizes: product.sizes,
+                        imageUrl: product.imageUrl,
+                        featured: product.featured,
+                      })
+                    }
+                    className="min-h-11 rounded-lg border border-crm-line text-[0.66rem] font-semibold uppercase tracking-[0.1em] text-[#5f5548] active:bg-[#faf6ee]"
+                  >
+                    Edit pair
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPendingDelete(product)}
+                    disabled={busy === product.id}
+                    className="min-h-11 rounded-lg border border-[#dfc0bb] text-[0.66rem] font-semibold uppercase tracking-[0.1em] text-[#88423a] active:bg-[#f1dedb] disabled:opacity-40"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+
         {filtered.length === 0 && (
           <div className="px-6 py-14 text-center">
             <p className="font-display text-lg text-[#3c332a]">No pairs match that view.</p>
@@ -660,7 +828,7 @@ export function ProductsManager({ initial }: { initial: CrmProduct[] }) {
               </label>
             </div>
 
-            <div className="flex items-center justify-between gap-3 border-t border-crm-line px-5 py-4">
+            <div className="flex items-center justify-between gap-3 border-t border-crm-line px-5 py-4 sheet-actions">
               <p className="text-[0.64rem] text-[#a19683]">
                 Sold out is shown automatically when a ready pair hits zero stock.
               </p>
