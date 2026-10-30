@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
-import { inArray, lte, and, eq, sql } from "drizzle-orm";
+import { inArray, lte, gt, and, eq, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { leads, orders, products } from "@/db/schema";
 import { ensureSeed } from "@/db/seed";
@@ -9,7 +9,7 @@ import { CrmLogin } from "@/components/crm/crm-login";
 import { CrmSidebar } from "@/components/crm/crm-sidebar";
 
 export const metadata: Metadata = {
-  title: "Owner CRM",
+  title: { default: "Owner CRM", template: "%s · Tahura CRM" },
   description: "Private Tahura Boots Company operations console.",
   robots: { index: false, follow: false },
 };
@@ -31,7 +31,8 @@ async function getCounts() {
       db
         .select({ count: sql<number>`count(*)::int` })
         .from(products)
-        .where(and(lte(products.stock, 2), eq(products.status, "ready"))),
+        // Sama dengan filter "Low stock" di halaman inventory (0 = sold out, bukan low).
+        .where(and(gt(products.stock, 0), lte(products.stock, 2), eq(products.status, "ready"))),
     ]);
 
     return {

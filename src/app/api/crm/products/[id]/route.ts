@@ -57,8 +57,15 @@ export async function PATCH(
     }
     if (body.stock !== undefined) {
       const stock = Number(body.stock);
-      patch.stock =
-        Number.isFinite(stock) && stock >= 0 ? Math.round(stock) : 0;
+      // Dulu nilai negatif diam-diam diubah jadi 0 — shelf bisa kosong tanpa
+      // penjelasan. Sekarang ditolak dengan pesan yang jelas.
+      if (!Number.isFinite(stock) || stock < 0) {
+        return Response.json(
+          { ok: false, error: "Stock can't be negative." },
+          { status: 400 },
+        );
+      }
+      patch.stock = Math.min(9999, Math.round(stock));
     }
     if (body.status !== undefined) {
       if (!PRODUCT_STATUSES.includes(body.status as (typeof PRODUCT_STATUSES)[number])) {

@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { desc, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { orderItems, orders, products } from "@/db/schema";
@@ -5,6 +6,8 @@ import { ensureSeed } from "@/db/seed";
 import { isOwner } from "@/lib/auth";
 import { formatIdr } from "@/lib/format";
 import { CrmHeader, StatCard } from "@/components/crm/ui";
+
+export const metadata: Metadata = { title: "Orders" };
 import {
   OrdersManager,
   type CrmOrder,

@@ -145,16 +145,20 @@ Semua tabel punya index untuk kolom yang dipakai filter/sortir CRM (`status`,
 ### Fitur CRM
 
 - **Orders** — filter status, pencarian, sortir (tanggal/total/pelanggan),
-  pagination 8 baris, pilih baris + ubah status massal, ekspor CSV.
-- **Products** — pencarian, sortir stok/harga/terjual, ekspor CSV, tambah/edit/
-  hapus, penyesuaian stok cepat.
-- **Leads** — papan kanban per tahap, pencarian, ekspor CSV, ubah status dan
-  catatan.
-- **Dashboard** — omzet, pipeline, stok kritis, best seller, dan ringkasan
-  "cutting list" (newsletter/waitlist).
+  pagination 8 baris, aksi massal yang hanya berlaku untuk baris terlihat,
+  edit detail pelanggan, ekspor CSV, serta validasi stok di server
+  (tidak bisa memesan melebihi shelf; pair sold out/archive ditolak).
+- **Products** — pencarian, sortir, filter shelf, editor stok **inline**
+  (ketik angka → Enter), toggle ★ featured, tambah/edit/hapus, ekspor CSV.
+- **Leads** — papan kanban per tahap, pencarian, **tambah lead manual**,
+  edit tahap/nilai deal/catatan, hapus, ekspor CSV.
+- **Dashboard** — omzet dengan delta mingguan nyata, pipeline, best seller,
+  "cutting list" (newsletter/waitlist), dan panel **Needs attention**.
 
-Pembatalan atau penghapusan pesanan otomatis mengembalikan stok dan
-`units_sold`, sehingga angka di storefront tetap konsisten.
+Aturan stok: pair *ready* dipotong saat order dibuat, dikembalikan saat order
+dibatalkan atau dihapus, dan dipotong lagi (dengan pengecekan) bila order
+dibuka kembali. Pair *made to order* tidak menyentuh shelf. Detail lengkap:
+[`documentation/CRM.md`](documentation/CRM.md).
 
 ---
 

@@ -1,10 +1,11 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { desc, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { leads, orderItems, orders, products, subscribers } from "@/db/schema";
 import { ensureSeed } from "@/db/seed";
 import { isOwner } from "@/lib/auth";
-import { resolveAvailability, stockTone } from "@/lib/catalog";
+import { resolveAvailability } from "@/lib/catalog";
 import { formatIdr, formatIdrCompact, formatShortDate, timeAgo } from "@/lib/format";
 import {
   Avatar,
@@ -14,6 +15,10 @@ import {
   Panel,
   StatCard,
 } from "@/components/crm/ui";
+
+export const runtime = "nodejs";
+
+export const metadata: Metadata = { title: "Overview" };
 
 export const dynamic = "force-dynamic";
 
@@ -44,6 +49,18 @@ function weeklySeries(
     });
   }
   return weeks;
+}
+
+/** Berapa baris dengan status tertentu yang lebih tua dari `days` hari. */
+function staleCount(
+  rows: { status: string; createdAt: Date }[],
+  status: string,
+  days: number,
+) {
+  const cutoff = Date.now() - days * 24 * 60 * 60 * 1000;
+  return rows.filter(
+    (row) => row.status === status && new Date(row.createdAt).getTime() < cutoff,
+  ).length;
 }
 
 export default async function CrmOverviewPage() {
@@ -134,6 +151,60 @@ export default async function CrmOverviewPage() {
     : 0;
   const weeks = weeklySeries(orderRows);
   const peak = Math.max(...weeks.map((week) => week.value), 1);
+
+  // Delta nyata minggu ini vs minggu sebelumnya. Sebelumnya angka "+12.4%"
+  // ditulis mati di kode, jadi kartu revenue selalu tampak tumbuh.
+  const currentWeek = weeks[weeks.length - 1];
+  const previousWeek = weeks[weeks.length - 2];
+  const weekDelta =
+    previousWeek && previousWeek.value > 0
+      ? Math.round(((currentWeek.value - previousWeek.value) / previousWeek.value) * 1000) / 10
+      : null;
+
+  const stalePending = staleCount(orderRows, "pending", 3);
+  const staleLeads = staleCount(leadRows, "new", 7);
+
+  const attention = [
+    soldOut.length > 0 && {
+      key: "sold-out",
+      label: `${soldOut.length} style${soldOut.length === 1 ? "" : "s"} sold out`,
+      detail: soldOut.map((product) => product.name).join(", "),
+      href: "/crm/products",
+      cta: "Restock",
+      tone: "bg-[#f1dedb] text-[#88423a]",
+    },
+    lowStock.length > 0 && {
+      key: "low-stock",
+      label: `${lowStock.length} style${lowStock.length === 1 ? "" : "s"} running low`,
+      detail: lowStock.map((product) => `${product.name} (${product.stock})`).join(", "),
+      href: "/crm/products",
+      cta: "Open inventory",
+      tone: "bg-[#f6e7c8] text-[#7a5a17]",
+    },
+    stalePending > 0 && {
+      key: "pending",
+      label: `${stalePending} payment${stalePending === 1 ? "" : "s"} pending over 3 days`,
+      detail: "Chase the customer or cancel the order to release the stock.",
+      href: "/crm/orders",
+      cta: "Open orders",
+      tone: "bg-[#e8e1f0] text-[#5a4276]",
+    },
+    staleLeads > 0 && {
+      key: "leads",
+      label: `${staleLeads} new enquir${staleLeads === 1 ? "y" : "ies"} untouched for a week`,
+      detail: "Reply before the pair goes cold.",
+      href: "/crm/leads",
+      cta: "Open board",
+      tone: "bg-[#e3e9f0] text-[#365269]",
+    },
+  ].filter(Boolean) as {
+    key: string;
+    label: string;
+    detail: string;
+    href: string;
+    cta: string;
+    tone: string;
+  }[];
   const averageOrder = paidOrders.length
     ? Math.round(revenue / paidOrders.length)
     : 0;
@@ -181,7 +252,14 @@ export default async function CrmOverviewPage() {
           label="Revenue in the ledger"
           value={formatIdr(revenue)}
           detail={`${paidOrders.length} paid orders`}
-          trend={{ value: "12.4%", positive: true }}
+          trend={
+            weekDelta === null
+              ? undefined
+              : {
+                  value: `${Math.abs(weekDelta).toFixed(1)}% WoW`,
+                  positive: weekDelta >= 0,
+                }
+          }
           icon={<span className="text-sm">◉</span>}
         />
         <StatCard
@@ -337,25 +415,34 @@ export default async function CrmOverviewPage() {
 
         <div className="space-y-4">
           <Panel
-            title="Stock alerts"
-            subtitle={`${soldOut.length} sold out · ${lowStock.length} running low`}
-            action={<Link href="/crm/products" className="text-[0.6rem] font-semibold uppercase tracking-[0.12em] text-[#8a6a3c] hover:text-[#221b15]">Restock →</Link>}
+            title="Needs attention"
+            subtitle="The things that cost money if they wait"
           >
             <ul className="divide-y divide-crm-line/70">
-              {[...soldOut, ...lowStock].slice(0, 5).map((product) => (
-                <li key={product.id} className="flex items-center justify-between gap-3 px-4 py-2.5">
-                  <div>
-                    <p className="text-[0.74rem] text-[#3c332a]">{product.name}</p>
-                    <p className="text-[0.6rem] text-[#a19683]">{product.colorway} · {product.model}</p>
+              {attention.map((item) => (
+                <li key={item.key} className="flex items-start justify-between gap-3 px-4 py-3">
+                  <div className="min-w-0">
+                    <p className="flex items-center gap-2 text-[0.74rem] font-medium text-[#3c332a]">
+                      <span className={`rounded-full px-1.5 py-0.5 text-[0.55rem] font-semibold ${item.tone}`}>
+                        !
+                      </span>
+                      {item.label}
+                    </p>
+                    <p className="mt-1 line-clamp-2 text-[0.62rem] leading-relaxed text-[#a19683]">
+                      {item.detail}
+                    </p>
                   </div>
-                  <span className={`text-[0.68rem] font-semibold ${stockTone(product)}`}>
-                    {product.stock > 0 ? `${product.stock} left` : "Sold out"}
-                  </span>
+                  <Link
+                    href={item.href}
+                    className="shrink-0 rounded-md border border-crm-line bg-white px-2 py-1 text-[0.58rem] font-semibold uppercase tracking-[0.1em] text-[#8a6a3c] transition-colors hover:border-[#c6b699]"
+                  >
+                    {item.cta}
+                  </Link>
                 </li>
               ))}
-              {soldOut.length + lowStock.length === 0 && (
+              {attention.length === 0 && (
                 <li className="px-4 py-6 text-center text-[0.72rem] text-[#8b8173]">
-                  Every style is comfortably in stock.
+                  Nothing needs a decision today — shelf, payments and pipeline are clear.
                 </li>
               )}
             </ul>

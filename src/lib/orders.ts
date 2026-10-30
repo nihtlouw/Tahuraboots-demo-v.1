@@ -38,6 +38,61 @@ export async function restoreOrderStock(tx: Db, orderId: number) {
   }
 }
 
+/** Kesalahan stok yang bisa ditampilkan apa adanya ke pemilik studio. */
+export class StockError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "StockError";
+  }
+}
+
+/**
+ * Potong stok untuk pesanan yang diaktifkan kembali (mis. `cancelled → paid`).
+ *
+ * Kebalikan dari `restoreOrderStock`: dipakai saat status kembali ke status
+ * yang memegang stok. Stok dicek lebih dulu supaya pesanan tidak pernah
+ * membuat shelf menjadi negatif — dulu transisi ini tidak menyentuh stok sama
+ * sekali sehingga angka di storefront dan ledger bisa berbeda.
+ */
+export async function takeOrderStock(tx: Db, orderId: number) {
+  const items = await tx
+    .select({ productId: orderItems.productId, quantity: orderItems.quantity })
+    .from(orderItems)
+    .where(eq(orderItems.orderId, orderId));
+
+  const totals = new Map<number, number>();
+  for (const item of items) {
+    if (item.productId == null) continue;
+    totals.set(item.productId, (totals.get(item.productId) ?? 0) + item.quantity);
+  }
+
+  for (const [productId, quantity] of totals) {
+    const [product] = await tx
+      .select({ name: products.name, stock: products.stock, status: products.status })
+      .from(products)
+      .where(eq(products.id, productId));
+
+    // Produk sudah dihapus dari katalog: lewati, riwayat pesanan tetap utuh.
+    if (!product) continue;
+    // Made to order tidak memakai shelf.
+    if (product.status === "made_to_order") continue;
+
+    if (product.stock < quantity) {
+      throw new StockError(
+        `Only ${product.stock} × ${product.name} left on the shelf — this order needs ${quantity}.`,
+      );
+    }
+
+    await tx
+      .update(products)
+      .set({
+        stock: sql`${products.stock} - ${quantity}`,
+        unitsSold: sql`${products.unitsSold} + ${quantity}`,
+      })
+      .where(eq(products.id, productId));
+  }
+}
+
 /** Status yang dianggap masih "memegang" stok. */
 export const STOCK_HOLDING_STATUSES = [
   "pending",
@@ -75,10 +130,15 @@ export async function setOrderStatus(id: number, status: string, notes?: string)
       status as (typeof STOCK_HOLDING_STATUSES)[number],
     );
 
-    // Aktif → cancelled: kembalikan stok. Kebangkitan dari cancelled tidak
-    // otomatis memotong stok lagi (stok fisik dicek manual oleh owner).
-    if (wasHolding && !willHold && (status === "cancelled" || status === "refunded")) {
+    // Aktif → cancelled: kembalikan stok ke shelf.
+    if (wasHolding && !willHold) {
       await restoreOrderStock(tx, id);
+    }
+
+    // Cancelled → aktif lagi: ambil stok kembali (dan gagal jelas kalau shelf
+    // sudah tidak cukup, bukan diam-diam membuat stok negatif).
+    if (!wasHolding && willHold) {
+      await takeOrderStock(tx, id);
     }
 
     const [updated] = await tx
