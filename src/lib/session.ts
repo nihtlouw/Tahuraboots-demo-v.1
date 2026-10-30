@@ -18,16 +18,57 @@ export const LOGIN_MAX_ATTEMPTS = 8;
 
 const encoder = new TextEncoder();
 
+const DEFAULT_PASSCODE = "tahura2026";
+
+/**
+ * Passcode CRM.
+ *
+ * Di production, passcode default TIDAK dipakai: nilai itu tertulis di repo
+ * publik sehingga siapa pun bisa masuk. Kalau `CRM_PASSCODE` belum di-set,
+ * kembalikan sentinel acak per-instance agar login selalu ditolak.
+ */
 export function passcode() {
-  return process.env.CRM_PASSCODE ?? "tahura2026";
+  const configured = process.env.CRM_PASSCODE?.trim();
+  if (configured) return configured;
+
+  if (process.env.NODE_ENV === "production") {
+    console.error(
+      "[auth] CRM_PASSCODE belum di-set — login CRM dinonaktifkan di production.",
+    );
+    return `disabled:${randomNonce()}`;
+  }
+
+  return DEFAULT_PASSCODE;
 }
 
-/** Kunci penandatangan sesi; idealnya `AUTH_SECRET` diisi eksplisit. */
+let ephemeralSecret: string | null = null;
+
+/**
+ * Kunci penandatangan sesi.
+ *
+ * Urutan: `AUTH_SECRET` → turunan `CRM_PASSCODE` → (production) kunci acak
+ * per-instance. Opsi terakhir membuat cookie tidak bisa dipalsukan, dengan
+ * konsekuensi sesi tidak bertahan antar instance sampai env diisi.
+ */
 export function sessionSecret() {
-  return (
-    process.env.AUTH_SECRET ??
-    `tahura-session:${process.env.CRM_PASSCODE ?? "tahura2026"}`
-  );
+  const configured = process.env.AUTH_SECRET?.trim();
+  if (configured) return configured;
+
+  const passcodeValue = process.env.CRM_PASSCODE?.trim();
+  if (passcodeValue) return `tahura-session:${passcodeValue}`;
+
+  if (!ephemeralSecret) {
+    const bytes = new Uint8Array(32);
+    crypto.getRandomValues(bytes);
+    ephemeralSecret = `ephemeral:${toBase64Url(bytes.buffer)}`;
+    if (process.env.NODE_ENV === "production") {
+      console.error(
+        "[auth] AUTH_SECRET & CRM_PASSCODE kosong — sesi memakai kunci acak " +
+          "per-instance; set keduanya di Vercel.",
+      );
+    }
+  }
+  return ephemeralSecret;
 }
 
 function toBase64Url(bytes: ArrayBuffer) {

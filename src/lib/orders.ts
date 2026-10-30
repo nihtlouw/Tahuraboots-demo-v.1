@@ -120,13 +120,27 @@ export async function deleteOrder(id: number) {
  * ~16 menit sehingga bisa melanggar constraint UNIQUE (pesanan gagal dibuat).
  */
 export async function nextOrderNumber() {
-  const result = (await db.execute(
-    sql`select to_char(now() at time zone 'Asia/Jakarta', 'YYMMDD') as stamp,
-               nextval('order_number_seq') as seq`,
-  )) as unknown as { rows: { stamp: string; seq: string }[] };
+  try {
+    const result = (await db.execute(
+      sql`select to_char(now() at time zone 'Asia/Jakarta', 'YYMMDD') as stamp,
+                 nextval('order_number_seq') as seq`,
+    )) as unknown as { rows: { stamp: string; seq: string }[] };
 
-  const row = result.rows?.[0];
-  const stamp = row?.stamp ?? "000000";
-  const seq = Number(row?.seq ?? 0);
-  return `TB-${stamp}-${String(seq).padStart(4, "0")}`;
+    const row = result.rows?.[0];
+    const stamp = row?.stamp ?? "000000";
+    const seq = Number(row?.seq ?? 0);
+    return `TB-${stamp}-${String(seq).padStart(4, "0")}`;
+  } catch (error) {
+    // Sequence berasal dari migration 0001. Kalau belum diterapkan, jangan
+    // sampai pembuatan pesanan gagal total — pakai nomor acak yang tetap unik.
+    console.error(
+      "[orders] order_number_seq belum ada (jalankan migration 0001), memakai fallback:",
+      error instanceof Error ? error.message : error,
+    );
+    const now = new Date();
+    const pad = (value: number) => String(value).padStart(2, "0");
+    const stamp = `${String(now.getFullYear()).slice(-2)}${pad(now.getMonth() + 1)}${pad(now.getDate())}`;
+    const suffix = Math.random().toString(36).slice(2, 6).toUpperCase();
+    return `TB-${stamp}-${suffix}`;
+  }
 }
