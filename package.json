@@ -1,12 +1,18 @@
 {
-  "name": "nextjs-postgresql-template",
+  "name": "tahuraboots",
+  "version": "1.0.0",
   "private": true,
+  "description": "Tahura Boots Company — hand-welted boots storefront + CRM (Next.js + Drizzle + Postgres/Neon)",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:push": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
     "dotenv": "17.3.1",

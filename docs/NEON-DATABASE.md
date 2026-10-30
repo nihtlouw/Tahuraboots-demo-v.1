@@ -9,105 +9,90 @@
 | Database | `neondb` |
 | User | `neondb_owner` |
 | Host (pooled) | `ep-super-poetry-aztnujjm-pooler.c-3.ap-southeast-1.aws.neon.tech` |
+| Host (direct) | `ep-super-poetry-aztnujjm.c-3.ap-southeast-1.aws.neon.tech` |
 | Port | `5432` |
 | SSL | wajib (`sslmode=require`) |
+| ORM | Drizzle ORM (`drizzle-orm` + driver `pg`) |
 
-Nilai lengkap (termasuk password) **hanya** disimpan di `.env` / `.env.local`
-yang sudah masuk `.gitignore`. Repo ini **public**, jadi credential tidak boleh
-pernah ikut di-commit.
+Password **hanya** disimpan di `.env` lokal dan environment variables hosting.
+Repo ini public — credential tidak pernah di-commit.
 
 ## 2. Format connection string
 
 ```ini
-# Dipakai aplikasi (serverless-friendly, lewat connection pooler Neon)
+# Runtime aplikasi — lewat connection pooler Neon (cocok untuk serverless/Vercel)
 DATABASE_URL="postgresql://neondb_owner:<PASSWORD>@ep-super-poetry-aztnujjm-pooler.c-3.ap-southeast-1.aws.neon.tech/neondb?sslmode=require"
 
-# Dipakai tooling migration (Prisma migrate / drizzle-kit / psql)
-# Host tanpa "-pooler":
+# Tooling migration (drizzle-kit) — koneksi langsung tanpa pooler
 DIRECT_URL="postgresql://neondb_owner:<PASSWORD>@ep-super-poetry-aztnujjm.c-3.ap-southeast-1.aws.neon.tech/neondb?sslmode=require"
 ```
 
-> **Catatan `${...}` vs `&amp;`**
-> Kalau connection string di-copy dari dashboard Neon / WhatsApp / halaman web,
-> karakter `&` sering berubah jadi `&amp;` (HTML entity). Di dalam `.env` harus
-> ditulis `&` biasa. Kalau pakai `channel_binding=require`, sebagian driver Node
-> (`pg`, Prisma, Drizzle) tidak mendukungnya — lebih aman pakai `sslmode=require`
-> saja. Untuk `psql`/libpq keduanya aman.
+> **Penting saat copy-paste**
+> - Karakter `&` kadang berubah menjadi `&amp;` (HTML entity) kalau disalin dari
+>   halaman web / WhatsApp. Di `.env` harus `&` biasa.
+> - Parameter `channel_binding=require` tidak dikenali driver `pg`/Drizzle dan
+>   bisa membuat koneksi gagal. Cukup pakai `sslmode=require`.
+> - `DATABASE_URL` (pooled) dipakai aplikasi, `DIRECT_URL` dipakai migration.
+>   Kalau `DIRECT_URL` kosong, `drizzle.config.ts` otomatis memakai
+>   `DATABASE_URL`.
 
-## 3. Setup lokal
+## 3. Membuat tabel di Neon
 
-```bash
-cp .env.example .env        # lalu isi DATABASE_URL & DIRECT_URL
-npm install                 # sesuai stack project
-```
+Skema sudah tersedia sebagai file SQL: `drizzle/0000_*.sql`.
 
-Prisma (`schema.prisma`):
-
-```prisma
-datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
-}
-```
-
-Drizzle (`drizzle.config.ts`):
-
-```ts
-export default defineConfig({
-  schema: './src/db/schema.ts',
-  dialect: 'postgresql',
-  dbCredentials: { url: process.env.DIRECT_URL ?? process.env.DATABASE_URL! },
-});
-```
-
-node-postgres (`pg`):
-
-```ts
-import { Pool } from 'pg';
-
-export const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false }, // Neon: sslmode=require
-});
-```
-
-## 4. Menerapkan skema ke Neon
-
-Karena sandbox agen tidak punya akses keluar ke host Neon, eksekusi migration
-dilakukan dari mesin Anda sendiri atau lewat Neon SQL Editor:
-
-**Opsi A — dari lokal (paling praktis)**
+**Opsi A — dari lokal (disarankan)**
 
 ```bash
-npx prisma migrate deploy     # Prisma
-# atau
-npx drizzle-kit push          # Drizzle
-# atau
-psql "$DIRECT_URL" -f migrations/0001_init.sql
+npm run db:migrate        # menjalankan semua file di drizzle/
+# atau, untuk prototyping:
+npm run db:push           # drizzle-kit membandingkan schema.ts vs database
 ```
 
 **Opsi B — Neon SQL Editor**
 
-Buka <https://console.neon.tech> → project `neondb` → **SQL Editor** → paste isi
-file `migrations/*.sql` → Run.
+1. Buka <https://console.neon.tech> → pilih project → tab **SQL Editor**.
+2. Buka `drizzle/0000_sleepy_valeria_richards.sql` di repo.
+3. Hapus komentar `--> statement-breakpoint` (boleh tetap ada juga), lalu Run.
 
-**Opsi C — GitHub Actions (otomatis)**
+Setelah tabel ada, buka halaman utama aplikasi — data contoh akan terisi
+otomatis lewat `ensureSeed()` di `src/db/seed.ts`.
+
+**Opsi C — GitHub Actions**
 
 Simpan `DATABASE_URL` di *Settings → Secrets and variables → Actions*, lalu
-jalankan workflow migration pada runner GitHub (runner punya akses internet
-penuh, berbeda dengan sandbox agen).
+jalankan langkah berikut pada runner:
 
-## 5. Deployment (Vercel / Netlify / dsb.)
+```yaml
+- run: npm ci
+- run: npm run db:migrate
+  env:
+    DATABASE_URL: ${{ secrets.DATABASE_URL }}
+    DIRECT_URL: ${{ secrets.DIRECT_URL }}
+```
 
-Tambahkan environment variable berikut di dashboard hosting:
+Runner GitHub punya akses internet penuh, jadi bisa menjangkau Neon.
 
-- `DATABASE_URL` → pooled connection string
-- `DIRECT_URL` → direct connection string (kalau tooling butuh)
+## 4. Verifikasi
+
+```bash
+curl http://localhost:3000/api/health    # {"ok":true} bila DB terhubung
+npm run db:studio                        # GUI untuk melihat tabel & data
+```
+
+## 5. Deployment (Vercel / Netlify)
+
+Tambahkan environment variable berikut:
+
+| Key | Value |
+| --- | --- |
+| `DATABASE_URL` | connection string **pooled** |
+| `DIRECT_URL` | connection string **direct** |
+| `CRM_PASSCODE` | passcode CRM produksi |
 
 ## 6. Keamanan
 
-- Password Neon yang pernah dikirim lewat chat sebaiknya **dirotasi**:
-  Neon Console → **Roles & Databases** → `neondb_owner` → *Reset password*.
-- Setelah rotasi, cukup perbarui `.env` lokal dan env var di hosting.
-- Jangan pernah commit `.env`; gunakan `.env.example` sebagai template.
+- Rotasi password Neon yang pernah dibagikan lewat chat:
+  **Neon Console → Roles & Databases → `neondb_owner` → Reset password**.
+- Setelah rotasi, perbarui `.env` lokal dan env var di hosting.
+- Jangan commit `.env`. Gunakan `.env.example` sebagai template.
+- Untuk produksi, batasi akses `/crm` (passcode bersama tidak punya audit trail).

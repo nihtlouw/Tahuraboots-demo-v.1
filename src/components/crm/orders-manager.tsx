@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { CHANNELS, ORDER_STATUSES, orderStatusMeta } from "@/lib/catalog";
 import { formatDate, formatIdr } from "@/lib/format";
 import { Avatar, ChannelBadge, OrderPill, Panel } from "@/components/crm/ui";
@@ -74,9 +74,13 @@ export function OrdersManager({
     },
   ]);
 
-  useEffect(() => {
+  const [syncedInitial, setSyncedInitial] = useState(initial);
+
+  // Data dari server berubah setelah router.refresh(); sinkronkan di fase render.
+  if (syncedInitial !== initial) {
+    setSyncedInitial(initial);
     setOrders(initial);
-  }, [initial]);
+  }
 
   const filtered = useMemo(
     () =>

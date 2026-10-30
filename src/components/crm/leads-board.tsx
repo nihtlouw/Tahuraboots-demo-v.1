@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { LEAD_STATUSES, leadStatusMeta } from "@/lib/catalog";
 import { formatIdr, timeAgo } from "@/lib/format";
 import { LeadPill } from "@/components/crm/ui";
@@ -29,10 +29,15 @@ export function LeadsBoard({ initial }: { initial: CrmLead[] }) {
   const [selected, setSelected] = useState<CrmLead | null>(null);
   const [notes, setNotes] = useState("");
   const [savingNotes, setSavingNotes] = useState(false);
+  const [syncedInitial, setSyncedInitial] = useState(initial);
+  const [weekAgo] = useState(() => Date.now() - 7 * 24 * 60 * 60 * 1000);
 
-  useEffect(() => {
+  // Server mengirim ulang data setelah router.refresh(); samakan state lokal
+  // di fase render (pola resmi React, tanpa efek tambahan).
+  if (syncedInitial !== initial) {
+    setSyncedInitial(initial);
     setLeads(initial);
-  }, [initial]);
+  }
 
   async function patch(id: number, body: Record<string, unknown>) {
     setBusy(id);
@@ -84,8 +89,7 @@ export function LeadsBoard({ initial }: { initial: CrmLead[] }) {
     .filter((lead) => ["new", "contacted", "quoted"].includes(lead.status))
     .reduce((sum, lead) => sum + lead.valueIdr, 0);
   const newThisWeek = leads.filter(
-    (lead) =>
-      new Date(lead.createdAt).getTime() > Date.now() - 7 * 24 * 60 * 60 * 1000,
+    (lead) => new Date(lead.createdAt).getTime() > weekAgo,
   ).length;
   const won = leads.filter((lead) => lead.status === "won");
   const conversion = leads.length ? Math.round((won.length / leads.length) * 100) : 0;

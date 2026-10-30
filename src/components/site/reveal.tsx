@@ -23,8 +23,9 @@ export function Reveal({
     if (!node) return;
 
     if (typeof IntersectionObserver === "undefined") {
-      setVisible(true);
-      return;
+      // Browser lama: tampilkan saja, tanpa menunggu scroll.
+      const frame = requestAnimationFrame(() => setVisible(true));
+      return () => cancelAnimationFrame(frame);
     }
 
     const observer = new IntersectionObserver(
