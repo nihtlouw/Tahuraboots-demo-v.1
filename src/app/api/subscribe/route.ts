@@ -2,6 +2,7 @@ import { sql } from "drizzle-orm";
 import { db } from "@/db";
 import { subscribers } from "@/db/schema";
 import { checkLoginRateLimit, clientKey } from "@/lib/auth";
+import { ensureSeed } from "@/db/seed";
 
 export const dynamic = "force-dynamic";
 
@@ -23,6 +24,8 @@ export async function POST(request: Request) {
   }
 
   try {
+    // Deployment baru: pastikan skema + data contoh siap sebelum menulis.
+    await ensureSeed();
     const body = (await request.json()) as {
       email?: string;
       source?: string;

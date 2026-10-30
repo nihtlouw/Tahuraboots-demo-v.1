@@ -1,5 +1,6 @@
 import { db } from "@/db";
 import { leads } from "@/db/schema";
+import { ensureSeed } from "@/db/seed";
 
 export const dynamic = "force-dynamic";
 
@@ -16,6 +17,8 @@ type Payload = {
 
 export async function POST(request: Request) {
   try {
+    // Deployment baru: pastikan skema + data contoh siap sebelum menulis.
+    await ensureSeed();
     const body = (await request.json()) as Payload;
     const name = body.name?.trim();
     const email = body.email?.trim();

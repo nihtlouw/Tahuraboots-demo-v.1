@@ -3,6 +3,7 @@ import { db } from "@/db";
 import { products } from "@/db/schema";
 import { isOwner, unauthorized } from "@/lib/auth";
 import { PRODUCT_STATUSES } from "@/lib/catalog";
+import { ensureSeed } from "@/db/seed";
 
 export const dynamic = "force-dynamic";
 
@@ -34,6 +35,8 @@ export async function PATCH(
   }
 
   try {
+    // Deployment baru: pastikan skema + data contoh siap sebelum menulis.
+    await ensureSeed();
     const body = (await request.json()) as Payload;
     const patch: Record<string, unknown> = {};
 
@@ -107,12 +110,26 @@ export async function DELETE(
   }
 
   try {
+    // Deployment baru: pastikan skema + data contoh siap sebelum menulis.
+    await ensureSeed();
     await db.delete(products).where(eq(products.id, productId));
     return Response.json({ ok: true });
-  } catch {
+  } catch (error) {
+    // 23503 = foreign_key_violation: produk masih dipakai di order_items.
+    // Dulu semua error dilaporkan 409 "attached to an order", termasuk saat
+    // database sedang mati — pesannya jadi menyesatkan.
+    const code = (error as { code?: string } | null)?.code;
+    if (code === "23503" || /foreign key/i.test(String((error as Error)?.message ?? ""))) {
+      return Response.json(
+        { ok: false, error: "This pair is attached to an order and cannot be removed." },
+        { status: 409 },
+      );
+    }
+
+    console.error("[api] gagal menghapus produk:", error);
     return Response.json(
-      { ok: false, error: "This pair is attached to an order and cannot be removed." },
-      { status: 409 },
+      { ok: false, error: "Could not remove the pair. Please try again." },
+      { status: 500 },
     );
   }
 }

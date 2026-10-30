@@ -4,6 +4,7 @@ import { orderItems, orders, products } from "@/db/schema";
 import { isOwner, unauthorized } from "@/lib/auth";
 import { CHANNELS } from "@/lib/catalog";
 import { nextOrderNumber } from "@/lib/orders";
+import { ensureSeed } from "@/db/seed";
 
 export const dynamic = "force-dynamic";
 
@@ -28,6 +29,8 @@ export async function POST(request: Request) {
   if (!(await isOwner())) return unauthorized();
 
   try {
+    // Deployment baru: pastikan skema + data contoh siap sebelum menulis.
+    await ensureSeed();
     const body = (await request.json()) as OrderPayload;
     const name = (body.customerName ?? "").trim();
     const email = (body.customerEmail ?? "").trim();
@@ -68,7 +71,9 @@ export async function POST(request: Request) {
         const quantity = Math.max(1, Math.round(Number(item.quantity) || 1));
         return {
           product,
-          size: (item.size ?? "42").slice(0, 8),
+          // `size` bisa datang sebagai angka dari JSON; paksa ke string dulu
+          // supaya `.slice\` tidak melempar TypeError dan pesanan hilang.
+          size: String(item.size ?? "42").slice(0, 8),
           quantity,
         };
       })
@@ -139,7 +144,9 @@ export async function POST(request: Request) {
       ok: true,
       order: { id: created.id, orderNumber: created.orderNumber, totalIdr: total },
     });
-  } catch {
+  } catch (error) {
+    // Jangan telan diam-diam: tanpa log, kegagalan di produksi tak bisa dilacak.
+    console.error("[api] gagal menyimpan pesanan:", error);
     return Response.json(
       { ok: false, error: "Could not log the order." },
       { status: 500 },

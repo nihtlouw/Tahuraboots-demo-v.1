@@ -2,6 +2,7 @@ import { db } from "@/db";
 import { products } from "@/db/schema";
 import { isOwner, unauthorized } from "@/lib/auth";
 import { normaliseProduct, type ProductPayload } from "@/lib/product-input";
+import { ensureSeed } from "@/db/seed";
 
 export const dynamic = "force-dynamic";
 
@@ -9,6 +10,8 @@ export async function POST(request: Request) {
   if (!(await isOwner())) return unauthorized();
 
   try {
+    // Deployment baru: pastikan skema + data contoh siap sebelum menulis.
+    await ensureSeed();
     const body = (await request.json()) as ProductPayload;
     const values = normaliseProduct(body);
 
