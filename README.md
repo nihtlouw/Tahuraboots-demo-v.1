@@ -215,12 +215,16 @@ Ringkasnya — set environment variables berikut di hosting:
 | `AUTH_SECRET` | ✅ | `openssl rand -base64 32` |
 | `NEXT_PUBLIC_SITE_URL` | – | canonical/sitemap |
 
-Lalu terapkan skema (pilih satu): tempel `drizzle/bootstrap.sql` di Neon SQL
-Editor, jalankan `npm run db:migrate`, atau pakai workflow GitHub Actions.
-
-Terakhir buka **`/api/health`** — endpoint ini melaporkan koneksi, tabel,
+**Skema tidak perlu diterapkan manual.** Saat pertama kali diakses, aplikasi
+membuat tabel, index, dan sequence sendiri (`ensureSchema()` dari
+`drizzle/bootstrap.sql`), lalu mengisi data contoh (`ensureSeed()`). Cukup buka
+**`/api/health`** sekali — endpoint ini sekaligus melaporkan koneksi, tabel,
 sequence, jumlah baris, dan konfigurasi yang masih kurang. `ok:true` +
 `ready:true` berarti siap dipakai.
+
+Kalau ingin mengunci DDL ke pipeline migration, set `AUTO_MIGRATE=false` lalu
+pakai salah satu jalur manual: tempel `drizzle/bootstrap.sql` di Neon SQL
+Editor, jalankan `npm run db:migrate`, atau pakai workflow GitHub Actions.
 
 Font dan gambar disajikan dari repo sendiri (`public/`), jadi tidak butuh
 koneksi ke Google Fonts atau CDN eksternal saat build.

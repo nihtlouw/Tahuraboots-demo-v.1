@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import { db } from "@/db";
+import { ensureSchema, isMissingRelationError, resetSchemaCache } from "@/db/ensure-schema";
 import { leads, orderItems, orders, products } from "@/db/schema";
 
 type SeedItem = { slug: string; size: string; quantity: number };
@@ -464,7 +465,14 @@ function daysAgo(days: number) {
   return new Date(Date.now() - days * 24 * 60 * 60 * 1000);
 }
 
-let seedPromise: Promise<void> | null = null;
+/**
+ * Hanya permintaan yang BERJALAN BERSAMAAN yang digabung (dedupe). Hasilnya
+ * tidak di-cache permanen: setiap render memverifikasi ulang dengan satu query
+ * murah (`select count(*) from products`), sehingga instance yang sudah warm
+ * tetap sadar kalau database di-reset atau diganti. Tanpa ini, halaman 500
+ * selamanya sampai instance tersebut mati.
+ */
+let seedInflight: Promise<void> | null = null;
 
 /**
  * Kunci advisory agar seed hanya berjalan di SATU instance.
@@ -560,13 +568,32 @@ async function runSeed() {
   });
 }
 
-/** Idempotent, safe to call from any server route or page. */
+/**
+ * Siapkan database: buat skema bila belum ada, lalu isi data contoh.
+ *
+ * Idempotent dan aman dipanggil dari page/route mana pun. Di deployment baru
+ * (Vercel + Neon) ini membuat aplikasi langsung berfungsi tanpa langkah
+ * migration manual.
+ */
 export function ensureSeed() {
-  if (!seedPromise) {
-    seedPromise = runSeed().catch((error) => {
-      seedPromise = null;
-      throw error;
+  if (seedInflight) return seedInflight;
+
+  const promise = ensureSchema()
+    .then(() => runSeed())
+    .catch(async (error) => {
+      // Tabel hilang di tengah jalan (database di-reset / branch Neon baru):
+      // buat ulang skema lalu ulangi sekali. Bukan kegagalan permanen.
+      if (!isMissingRelationError(error)) throw error;
+
+      console.warn("[seed] tabel belum ada saat seeding — membuat ulang skema");
+      resetSchemaCache();
+      await ensureSchema({ force: true });
+      await runSeed();
+    })
+    .finally(() => {
+      seedInflight = null;
     });
-  }
-  return seedPromise;
+
+  seedInflight = promise;
+  return promise;
 }

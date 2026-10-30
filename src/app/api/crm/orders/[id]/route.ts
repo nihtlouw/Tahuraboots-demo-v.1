@@ -4,6 +4,7 @@ import { orders } from "@/db/schema";
 import { isOwner, unauthorized } from "@/lib/auth";
 import { ORDER_STATUSES } from "@/lib/catalog";
 import { deleteOrder, setOrderStatus } from "@/lib/orders";
+import { ensureSeed } from "@/db/seed";
 
 export const dynamic = "force-dynamic";
 
@@ -20,6 +21,8 @@ export async function PATCH(
   }
 
   try {
+    // Deployment baru: pastikan skema + data contoh siap sebelum menulis.
+    await ensureSeed();
     const body = (await request.json()) as { status?: string; notes?: string };
 
     if (body.status !== undefined) {
@@ -72,6 +75,8 @@ export async function DELETE(
   }
 
   try {
+    // Deployment baru: pastikan skema + data contoh siap sebelum menulis.
+    await ensureSeed();
     const removed = await deleteOrder(orderId);
     if (!removed) {
       return Response.json({ ok: false, error: "Order not found." }, { status: 404 });

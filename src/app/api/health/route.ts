@@ -1,5 +1,7 @@
 import { sql } from "drizzle-orm";
 import { db } from "@/db";
+import { ensureSchema, resetSchemaCache } from "@/db/ensure-schema";
+import { ensureSeed } from "@/db/seed";
 
 export const dynamic = "force-dynamic";
 
@@ -53,15 +55,52 @@ export async function GET() {
     );
   }
 
-  // Tabel wajib
-  try {
+  // ── Skema: buat otomatis bila belum ada ──────────────────────────────
+  // Membuka /api/health sekali sudah cukup untuk menyiapkan database baru.
+  // `force` penting: endpoint ini harus melaporkan keadaan SEBENARNYA, bukan
+  // hasil cache 30 detik milik instance yang mungkin sudah basi.
+  const missingTables = async () => {
     const result = await db.execute(sql`
       select table_name
         from information_schema.tables
        where table_schema = 'public'
     `);
     const present = new Set(rowsOf<{ table_name: string }>(result).map((r) => r.table_name));
-    const missing = REQUIRED_TABLES.filter((name) => !present.has(name));
+    return REQUIRED_TABLES.filter((name) => !present.has(name));
+  };
+
+  let schemaState: Awaited<ReturnType<typeof ensureSchema>> | null = null;
+
+  try {
+    schemaState = await ensureSchema({ force: true });
+
+    // Kalau tabel ternyata tetap hilang (mis. skema di-reset saat instance
+    // masih warm), buang cache dan bootstrap sekali lagi.
+    if (schemaState.ready && (await missingTables()).length > 0) {
+      resetSchemaCache();
+      schemaState = await ensureSchema({ force: true });
+    }
+
+    checks.push({
+      name: "schema",
+      ok: schemaState.ready,
+      detail: schemaState.created
+        ? `skema dibuat otomatis (${schemaState.statements} statement)`
+        : schemaState.ready
+          ? "skema sudah ada"
+          : (schemaState.skippedReason ?? "skema belum siap"),
+    });
+  } catch (error) {
+    checks.push({
+      name: "schema",
+      ok: false,
+      detail: error instanceof Error ? error.message.slice(0, 160) : "gagal membuat skema",
+    });
+  }
+
+  // Tabel wajib
+  try {
+    const missing = await missingTables();
 
     checks.push({
       name: "tables",
@@ -69,7 +108,7 @@ export async function GET() {
       detail:
         missing.length === 0
           ? `${REQUIRED_TABLES.length}/${REQUIRED_TABLES.length} tabel tersedia`
-          : `belum ada: ${missing.join(", ")}`,
+          : `belum ada: ${missing.join(", ")} — cek AUTO_MIGRATE dan hak tulis user database`,
     });
   } catch (error) {
     checks.push({
@@ -92,15 +131,18 @@ export async function GET() {
       detail:
         missing.length === 0
           ? "order_number_seq siap"
-          : `belum ada: ${missing.join(", ")} — jalankan migration 0001`,
+          : `belum ada: ${missing.join(", ")} — dibuat otomatis bersama skema (AUTO_MIGRATE)`,
     });
   } catch {
     checks.push({ name: "sequences", ok: false, detail: "tidak dapat diperiksa" });
   }
 
-  // Jumlah baris (bukti seed berjalan)
+  // ── Data contoh: isi otomatis bila masih kosong ───────────────────────
+  // Dengan begitu /api/health sekaligus menyiapkan ulang deployment baru.
   let counts: Record<string, number> | null = null;
   try {
+    await ensureSeed();
+
     const result = await db.execute(sql`
       select
         (select count(*) from products)::int    as products,
@@ -109,16 +151,22 @@ export async function GET() {
         (select count(*) from subscribers)::int as subscribers
     `);
     counts = rowsOf<Record<string, number>>(result)[0] ?? null;
+
     checks.push({
       name: "seed",
       ok: (counts?.products ?? 0) > 0,
       detail:
         (counts?.products ?? 0) > 0
           ? `produk=${counts?.products} pesanan=${counts?.orders} leads=${counts?.leads}`
-          : "tabel produk kosong (seed belum jalan — buka halaman utama sekali)",
+          : "tabel produk masih kosong",
     });
-  } catch {
-    checks.push({ name: "seed", ok: false, detail: "tabel belum lengkap" });
+  } catch (error) {
+    checks.push({
+      name: "seed",
+      ok: false,
+      detail:
+        error instanceof Error ? error.message.slice(0, 160) : "seed gagal dijalankan",
+    });
   }
 
   // ── Konfigurasi (tidak membocorkan nilai rahasia) ─────────────────────
@@ -146,15 +194,22 @@ export async function GET() {
 
   if (!checks.find((c) => c.name === "tables")?.ok) {
     hints.push(
-      "Migrasi belum dijalankan. Jalankan drizzle/0000_sleepy_valeria_richards.sql " +
-        "lalu drizzle/0001_hardening.sql di Neon SQL Editor, atau `npm run db:migrate`.",
+      "Skema belum bisa dibuat otomatis. Set AUTO_MIGRATE=true (default) atau tempel " +
+        "isi drizzle/bootstrap.sql di Neon SQL Editor — " +
+        "https://raw.githubusercontent.com/nihtlouw/Tahuraboots-demo-v.1/main/drizzle/bootstrap.sql",
     );
   }
   if (!checks.find((c) => c.name === "sequences")?.ok) {
-    hints.push("Jalankan drizzle/0001_hardening.sql untuk membuat sequence nomor pesanan.");
+    hints.push(
+      "Sequence nomor pesanan belum ada (bagian dari bootstrap). Buat ulang dengan " +
+        "AUTO_MIGRATE=true lalu buka /api/health lagi.",
+    );
   }
   if (!checks.find((c) => c.name === "seed")?.ok) {
-    hints.push("Buka halaman utama sekali agar data contoh terisi otomatis.");
+    hints.push(
+      "Data contoh belum bisa diisi. Pastikan AUTO_MIGRATE tidak false dan role " +
+        "database punya izin INSERT.",
+    );
   }
 
   return Response.json(
