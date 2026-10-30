@@ -1,0 +1,60 @@
+name: Fetch Drive Archive
+
+# Workflow sementara: dipakai agen untuk mengunduh file Google Drive
+# (runner GitHub punya akses internet penuh) dan menyimpannya sebagai artifact.
+# Hapus workflow ini setelah arsip berhasil diimpor ke repo.
+
+on:
+  push:
+    paths:
+      - '.github/workflows/fetch-drive.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install gdown
+        run: pip install --quiet gdown
+
+      - name: Download from Google Drive
+        env:
+          FILE_ID: 10d6x8rjkqrHxlFpy6kwAmkKiVSLamDhD
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          gdown "https://drive.google.com/uc?id=${FILE_ID}" -O out/archive.bin \
+            || gdown --fuzzy "https://drive.google.com/file/d/${FILE_ID}/view" -O out/archive.bin
+          ls -la out
+          file out/archive.bin || true
+          echo "size: $(stat -c%s out/archive.bin) bytes"
+
+      - name: Identify & unpack
+        run: |
+          set -euo pipefail
+          mkdir -p out/extracted
+          if file out/archive.bin | grep -qi 'zip archive'; then
+            unzip -q -o out/archive.bin -d out/extracted
+          elif file out/archive.bin | grep -qi 'gzip compressed'; then
+            tar -xzf out/archive.bin -C out/extracted
+          elif file out/archive.bin | grep -qi 'RAR archive'; then
+            sudo apt-get update -qq && sudo apt-get install -y -qq unrar
+            unrar x -o+ out/archive.bin out/extracted/
+          else
+            echo "Bukan arsip, salin apa adanya"
+            cp out/archive.bin out/extracted/archive.bin
+          fi
+          echo "--- isi arsip ---"
+          find out/extracted -maxdepth 3 | head -100
+          echo "--- jumlah file ---"
+          find out/extracted -type f | wc -l
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: drive-archive
+          path: out/
+          retention-days: 3
