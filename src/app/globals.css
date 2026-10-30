@@ -157,7 +157,9 @@
 
 @utility tap-40 {
   min-width: 2.5rem;
-  min-height: 2.5rem;
+  /* Tinggi 44px: patokan Material untuk target sentuh; lebar dibiarkan 40px
+     supaya stepper +/− di kartu produk tidak mendorong kolom lain. */
+  min-height: 2.75rem;
 }
 
 /* Carousel horizontal dengan snap per item, untuk filter chip di ponsel. */
@@ -346,4 +348,33 @@
   textarea {
     font-size: max(16px, 1em);
   }
+}
+
+/*
+ * Kerangka CRM di ponsel.
+ *
+ * Banyak tombol di CRM ditulis dengan padding vertikal kecil (py-1.5/py-2)
+ * karena di desktop memang harus ringkas. Di layar sentuh itu berarti target
+ * 30-34px — di bawah batas 44px Material, dan sering salah tekan. Aturan ini
+ * hanya aktif di bawah `sm`, jadi tampilan desktop sama sekali tidak berubah.
+ */
+@media (max-width: 639.98px) {
+  .crm-shell button,
+  .crm-shell select,
+  .crm-shell [role="button"] {
+    min-height: 2.75rem;
+  }
+}
+
+/*
+ * Pengaman luberan horizontal, dipasang di pembungkus konten (bukan di akar
+ * CRM), supaya tab bar/drawer yang `fixed` tidak ikut kena klip. Tabel lebar
+ * sudah dibungkus `overflow-x-auto` dan disembunyikan di ponsel, jadi aturan
+ * ini hanya menahan elemen yang luput (teks panjang tanpa `min-w-0`) agar
+ * halaman tidak bisa digeser ke samping di Android. `clip` dipakai, bukan
+ * `hidden`, supaya tidak membuat scroll container baru dan `sticky` di dalam
+ * konten tetap bekerja.
+ */
+.crm-page {
+  overflow-x: clip;
 }

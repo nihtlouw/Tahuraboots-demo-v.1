@@ -304,7 +304,7 @@ export function ProductsManager({ initial }: { initial: CrmProduct[] }) {
           ["Stock value", formatIdr(totals.value)],
         ].map(([label, value]) => (
           <div key={label} className="rounded-xl border border-crm-line bg-white px-4 py-3">
-            <p className="text-[0.58rem] font-semibold uppercase tracking-[0.14em] text-[#a19683]">{label}</p>
+            <p className="text-[0.64rem] font-semibold uppercase tracking-[0.14em] text-[#a19683]">{label}</p>
             <p className="mt-1 font-display text-xl text-[#221b15]">{value}</p>
           </div>
         ))}
@@ -318,14 +318,14 @@ export function ProductsManager({ initial }: { initial: CrmProduct[] }) {
               type="button"
               onClick={() => setFilter(tab.id)}
               aria-pressed={filter === tab.id}
-              className={`shrink-0 rounded-lg px-3 py-2 text-[0.66rem] font-medium transition-colors ${
+              className={`shrink-0 rounded-lg px-3 py-2 text-[0.70rem] font-medium transition-colors ${
                 filter === tab.id
                   ? "bg-ink text-paper"
                   : "text-[#7a7062] hover:bg-[#f4eee2]"
               }`}
             >
               {tab.label}
-              <span className={`ml-1.5 text-[0.58rem] ${filter === tab.id ? "text-paper/60" : "text-[#a19683]"}`}>
+              <span className={`ml-1.5 text-[0.64rem] ${filter === tab.id ? "text-paper/60" : "text-[#a19683]"}`}>
                 {tab.count}
               </span>
             </button>
@@ -345,7 +345,7 @@ export function ProductsManager({ initial }: { initial: CrmProduct[] }) {
             value={sort}
             onChange={(event) => setSort(event.target.value as typeof sort)}
             aria-label="Sort pairs"
-            className="rounded-lg border border-crm-line bg-white px-2.5 py-2.5 text-[0.64rem] text-[#3c332a] outline-none focus:border-[#b08c52]"
+            className="rounded-lg border border-crm-line bg-white px-2.5 py-2.5 text-[0.68rem] text-[#3c332a] outline-none focus:border-[#b08c52]"
           >
             <option value="shelf">Shelf · low stock first</option>
             <option value="sold">Best selling</option>
@@ -374,14 +374,14 @@ export function ProductsManager({ initial }: { initial: CrmProduct[] }) {
               if (ok) showToast(`${filtered.length} pairs exported to CSV.`);
               else setError("There is nothing to export in this view.");
             }}
-            className="shrink-0 rounded-lg border border-crm-line bg-white px-3 py-2.5 text-[0.62rem] font-semibold uppercase tracking-[0.12em] text-[#5f5548] transition-colors hover:border-[#c6b699]"
+            className="shrink-0 rounded-lg border border-crm-line bg-white px-3 py-2.5 text-[0.66rem] font-semibold uppercase tracking-[0.12em] text-[#5f5548] transition-colors hover:border-[#c6b699]"
           >
             Export CSV
           </button>
           <button
             type="button"
             onClick={() => setDraft({ ...emptyDraft })}
-            className="shrink-0 rounded-lg bg-[#7a5a2e] px-3.5 py-2.5 text-[0.62rem] font-semibold uppercase tracking-[0.12em] text-white transition-colors hover:bg-[#5f451f]"
+            className="shrink-0 rounded-lg bg-[#7a5a2e] px-3.5 py-2.5 text-[0.66rem] font-semibold uppercase tracking-[0.12em] text-white transition-colors hover:bg-[#5f451f]"
           >
             + New pair
           </button>
@@ -395,7 +395,7 @@ export function ProductsManager({ initial }: { initial: CrmProduct[] }) {
         <div className="hidden overflow-x-auto md:block">
           <table className="w-full min-w-[940px] text-left">
             <thead>
-              <tr className="border-b border-crm-line bg-[#faf7f1] text-[0.55rem] uppercase tracking-[0.14em] text-[#a19683]">
+              <tr className="border-b border-crm-line bg-[#faf7f1] text-[0.62rem] uppercase tracking-[0.14em] text-[#a19683]">
                 <th className="px-4 py-3 font-semibold">Pair</th>
                 <th className="px-3 py-3 font-semibold">Status</th>
                 <th className="px-3 py-3 font-semibold">Shelf</th>
@@ -443,10 +443,10 @@ export function ProductsManager({ initial }: { initial: CrmProduct[] }) {
                               ★
                             </button>
                           </div>
-                          <p className="truncate text-[0.62rem] text-[#a19683]">
+                          <p className="truncate text-[0.66rem] text-[#a19683]">
                             {product.colorway} · {product.leather}
                           </p>
-                          <p className="text-[0.56rem] uppercase tracking-[0.1em] text-[#c0b6a5]">
+                          <p className="text-[0.64rem] uppercase tracking-[0.1em] text-[#c0b6a5]">
                             {product.collectionName} · {sizeRange(product.sizes)}
                           </p>
                         </div>
@@ -458,7 +458,7 @@ export function ProductsManager({ initial }: { initial: CrmProduct[] }) {
                         onChange={(event) => patch(product.id, { status: event.target.value })}
                         disabled={busy === product.id}
                         aria-label={`Catalogue status for ${product.name}`}
-                        className={`rounded-lg border px-2 py-1.5 text-[0.68rem] font-medium outline-none ${
+                        className={`rounded-lg border px-2 py-1.5 text-[0.72rem] font-medium outline-none ${
                           availability === "sold_out"
                             ? "border-[#dfc0bb] bg-[#f1dedb] text-[#88423a]"
                             : availability === "ready"
@@ -475,7 +475,7 @@ export function ProductsManager({ initial }: { initial: CrmProduct[] }) {
                         ))}
                       </select>
                       {availability === "sold_out" && (
-                        <p className="mt-1 text-[0.55rem] uppercase tracking-[0.1em] text-[#a35a49]">Shelf empty</p>
+                        <p className="mt-1 text-[0.62rem] uppercase tracking-[0.1em] text-[#a35a49]">Shelf empty</p>
                       )}
                     </td>
                     <td className="px-3 py-3">
@@ -532,7 +532,7 @@ export function ProductsManager({ initial }: { initial: CrmProduct[] }) {
                         </button>
                       </div>
                       {dirty && (
-                        <p className="mt-1 text-[0.55rem] uppercase tracking-[0.1em] text-[#b08c52]">
+                        <p className="mt-1 text-[0.62rem] uppercase tracking-[0.1em] text-[#b08c52]">
                           Press Enter to save
                         </p>
                       )}
@@ -560,7 +560,7 @@ export function ProductsManager({ initial }: { initial: CrmProduct[] }) {
                               featured: product.featured,
                             })
                           }
-                          className="rounded-md border border-crm-line px-2.5 py-1.5 text-[0.62rem] font-medium text-[#5f5548] transition-colors hover:border-[#c6b699] hover:bg-[#faf6ee]"
+                          className="rounded-md border border-crm-line px-2.5 py-1.5 text-[0.66rem] font-medium text-[#5f5548] transition-colors hover:border-[#c6b699] hover:bg-[#faf6ee]"
                         >
                           Edit
                         </button>
@@ -568,7 +568,7 @@ export function ProductsManager({ initial }: { initial: CrmProduct[] }) {
                           type="button"
                           onClick={() => setPendingDelete(product)}
                           disabled={busy === product.id}
-                          className="rounded-md border border-transparent px-2 py-1.5 text-[0.62rem] text-[#a19683] transition-colors hover:border-[#dfc0bb] hover:bg-[#f1dedb] hover:text-[#88423a] disabled:opacity-40"
+                          className="rounded-md border border-transparent px-2 py-1.5 text-[0.66rem] text-[#a19683] transition-colors hover:border-[#dfc0bb] hover:bg-[#f1dedb] hover:text-[#88423a] disabled:opacity-40"
                         >
                           Delete
                         </button>
@@ -620,14 +620,14 @@ export function ProductsManager({ initial }: { initial: CrmProduct[] }) {
                     <p className="truncate text-[0.7rem] text-[#a19683]">
                       {product.colorway} · {product.leather}
                     </p>
-                    <p className="mt-0.5 text-[0.6rem] uppercase tracking-[0.1em] text-[#c0b6a5]">
+                    <p className="mt-0.5 text-[0.66rem] uppercase tracking-[0.1em] text-[#c0b6a5]">
                       {product.collectionName} · {sizeRange(product.sizes)}
                     </p>
                     <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[0.72rem]">
                       <span className="font-semibold text-[#3c332a]">{formatIdr(product.priceIdr)}</span>
                       <span className="text-[#8b8173]">{product.unitsSold} sold</span>
                       {availability === "sold_out" && (
-                        <span className="rounded-full bg-[#f1dedb] px-2 py-0.5 text-[0.58rem] font-semibold uppercase tracking-[0.08em] text-[#88423a]">
+                        <span className="rounded-full bg-[#f1dedb] px-2 py-0.5 text-[0.64rem] font-semibold uppercase tracking-[0.08em] text-[#88423a]">
                           Shelf empty
                         </span>
                       )}
@@ -703,7 +703,7 @@ export function ProductsManager({ initial }: { initial: CrmProduct[] }) {
                 </div>
 
                 {dirty && (
-                  <p className="mt-1 text-[0.6rem] uppercase tracking-[0.08em] text-[#b08c52]">
+                  <p className="mt-1 text-[0.66rem] uppercase tracking-[0.08em] text-[#b08c52]">
                     Press Enter to save stock
                   </p>
                 )}
@@ -728,7 +728,7 @@ export function ProductsManager({ initial }: { initial: CrmProduct[] }) {
                         featured: product.featured,
                       })
                     }
-                    className="min-h-11 rounded-lg border border-crm-line text-[0.66rem] font-semibold uppercase tracking-[0.1em] text-[#5f5548] active:bg-[#faf6ee]"
+                    className="min-h-11 rounded-lg border border-crm-line text-[0.70rem] font-semibold uppercase tracking-[0.1em] text-[#5f5548] active:bg-[#faf6ee]"
                   >
                     Edit pair
                   </button>
@@ -736,7 +736,7 @@ export function ProductsManager({ initial }: { initial: CrmProduct[] }) {
                     type="button"
                     onClick={() => setPendingDelete(product)}
                     disabled={busy === product.id}
-                    className="min-h-11 rounded-lg border border-[#dfc0bb] text-[0.66rem] font-semibold uppercase tracking-[0.1em] text-[#88423a] active:bg-[#f1dedb] disabled:opacity-40"
+                    className="min-h-11 rounded-lg border border-[#dfc0bb] text-[0.70rem] font-semibold uppercase tracking-[0.1em] text-[#88423a] active:bg-[#f1dedb] disabled:opacity-40"
                   >
                     Delete
                   </button>
@@ -829,14 +829,14 @@ export function ProductsManager({ initial }: { initial: CrmProduct[] }) {
             </div>
 
             <div className="flex items-center justify-between gap-3 border-t border-crm-line px-5 py-4 sheet-actions">
-              <p className="text-[0.64rem] text-[#a19683]">
+              <p className="text-[0.68rem] text-[#a19683]">
                 Sold out is shown automatically when a ready pair hits zero stock.
               </p>
               <div className="flex gap-2">
-                <button type="button" onClick={() => setDraft(null)} className="rounded-lg border border-crm-line px-4 py-2.5 text-[0.62rem] font-semibold uppercase tracking-[0.12em] text-[#7a7062]">
+                <button type="button" onClick={() => setDraft(null)} className="rounded-lg border border-crm-line px-4 py-2.5 text-[0.66rem] font-semibold uppercase tracking-[0.12em] text-[#7a7062]">
                   Cancel
                 </button>
-                <button type="submit" disabled={saving} className="rounded-lg bg-ink px-4 py-2.5 text-[0.62rem] font-semibold uppercase tracking-[0.12em] text-paper transition-colors hover:bg-ink-3 disabled:opacity-60">
+                <button type="submit" disabled={saving} className="rounded-lg bg-ink px-4 py-2.5 text-[0.66rem] font-semibold uppercase tracking-[0.12em] text-paper transition-colors hover:bg-ink-3 disabled:opacity-60">
                   {saving ? "Saving…" : draft.id ? "Save changes" : "Add pair"}
                 </button>
               </div>

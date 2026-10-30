@@ -242,7 +242,7 @@ export function ModalHeader({
   return (
     <div className="flex items-start justify-between gap-3 border-b border-crm-line px-5 py-4">
       <div>
-        <p className="text-[0.58rem] font-semibold uppercase tracking-[0.16em] text-[#a8865a]">
+        <p className="text-[0.64rem] font-semibold uppercase tracking-[0.16em] text-[#a8865a]">
           {eyebrow}
         </p>
         <h2 id={id} className="mt-1 font-display text-xl text-[#221b15]">
@@ -295,7 +295,7 @@ export function ConfirmDialog({
         <button
           type="button"
           onClick={onCancel}
-          className="rounded-lg border border-crm-line px-4 py-2.5 text-[0.62rem] font-semibold uppercase tracking-[0.12em] text-[#7a7062] transition-colors hover:border-[#c6b699]"
+          className="rounded-lg border border-crm-line px-4 py-2.5 text-[0.66rem] font-semibold uppercase tracking-[0.12em] text-[#7a7062] transition-colors hover:border-[#c6b699]"
         >
           {cancelLabel}
         </button>
@@ -303,7 +303,7 @@ export function ConfirmDialog({
           type="button"
           onClick={onConfirm}
           disabled={busy}
-          className={`rounded-lg px-4 py-2.5 text-[0.62rem] font-semibold uppercase tracking-[0.12em] text-white transition-colors disabled:opacity-60 ${
+          className={`rounded-lg px-4 py-2.5 text-[0.66rem] font-semibold uppercase tracking-[0.12em] text-white transition-colors disabled:opacity-60 ${
             tone === "danger"
               ? "bg-[#8a3a30] hover:bg-[#6f2c24]"
               : "bg-ink hover:bg-ink-3"

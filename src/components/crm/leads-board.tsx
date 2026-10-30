@@ -212,7 +212,7 @@ export function LeadsBoard({ initial }: { initial: CrmLead[] }) {
           ["Total enquiries", String(visibleLeads.length)],
         ].map(([label, value]) => (
           <div key={label} className="rounded-xl border border-crm-line bg-white px-4 py-3">
-            <p className="text-[0.58rem] font-semibold uppercase tracking-[0.14em] text-[#a19683]">{label}</p>
+            <p className="text-[0.64rem] font-semibold uppercase tracking-[0.14em] text-[#a19683]">{label}</p>
             <p className="mt-1 font-display text-xl text-[#221b15]">{value}</p>
           </div>
         ))}
@@ -230,7 +230,7 @@ export function LeadsBoard({ initial }: { initial: CrmLead[] }) {
           aria-label="Search leads"
         />
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-[0.62rem] text-[#8b8173]">
+          <span className="text-[0.66rem] text-[#8b8173]">
             {visibleLeads.length} of {leads.length} leads
           </span>
           <button
@@ -254,7 +254,7 @@ export function LeadsBoard({ initial }: { initial: CrmLead[] }) {
               if (ok) showToast(`${visibleLeads.length} leads exported to CSV.`);
               else setError("There is nothing to export in this view.");
             }}
-            className="rounded-lg border border-crm-line bg-white px-3 py-2 text-[0.62rem] font-semibold uppercase tracking-[0.12em] text-[#5f5548] transition-colors hover:border-[#c6b699]"
+            className="rounded-lg border border-crm-line bg-white px-3 py-2 text-[0.66rem] font-semibold uppercase tracking-[0.12em] text-[#5f5548] transition-colors hover:border-[#c6b699]"
           >
             Export CSV
           </button>
@@ -264,7 +264,7 @@ export function LeadsBoard({ initial }: { initial: CrmLead[] }) {
               setDraft(emptyDraft);
               setCreating(true);
             }}
-            className="rounded-lg bg-[#7a5a2e] px-3.5 py-2 text-[0.62rem] font-semibold uppercase tracking-[0.12em] text-white transition-colors hover:bg-[#5f451f]"
+            className="rounded-lg bg-[#7a5a2e] px-3.5 py-2 text-[0.66rem] font-semibold uppercase tracking-[0.12em] text-white transition-colors hover:bg-[#5f451f]"
           >
             + New lead
           </button>
@@ -289,7 +289,7 @@ export function LeadsBoard({ initial }: { initial: CrmLead[] }) {
             >
               <span className={`h-1.5 w-1.5 rounded-full ${leadStatusMeta[stage].accent}`} />
               {leadStatusMeta[stage].label}
-              <span className={`text-[0.6rem] ${active ? "text-paper/60" : "text-[#a19683]"}`}>
+              <span className={`text-[0.66rem] ${active ? "text-paper/60" : "text-[#a19683]"}`}>
                 {count}
               </span>
             </button>
@@ -309,11 +309,11 @@ export function LeadsBoard({ initial }: { initial: CrmLead[] }) {
               } md:block`}
             >
               <div className="flex items-center justify-between border-b border-crm-line px-3 py-2.5">
-                <span className="flex items-center gap-2 text-[0.64rem] font-semibold uppercase tracking-[0.12em] text-[#5f5548]">
+                <span className="flex items-center gap-2 text-[0.68rem] font-semibold uppercase tracking-[0.12em] text-[#5f5548]">
                   <span className={`h-1.5 w-1.5 rounded-full ${stageMeta.accent}`} />
                   {stageMeta.label}
                 </span>
-                <span className="rounded-full bg-white px-1.5 py-0.5 text-[0.58rem] font-semibold text-[#8b8173]">
+                <span className="rounded-full bg-white px-1.5 py-0.5 text-[0.64rem] font-semibold text-[#8b8173]">
                   {stageLeads.length}
                 </span>
               </div>
@@ -328,25 +328,25 @@ export function LeadsBoard({ initial }: { initial: CrmLead[] }) {
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
                           <p className="truncate text-[0.76rem] font-semibold text-[#221b15]">{lead.name}</p>
-                          <p className="text-[0.6rem] text-[#a19683]">
+                          <p className="text-[0.66rem] text-[#a19683]">
                             {lead.country} · {sourceLabel(lead.source)}
                           </p>
                         </div>
-                        <span className="shrink-0 text-[0.55rem] uppercase tracking-[0.1em] text-[#c0b6a5]">
+                        <span className="shrink-0 text-[0.62rem] uppercase tracking-[0.1em] text-[#c0b6a5]">
                           {timeAgo(lead.createdAt)}
                         </span>
                       </div>
 
-                      <p className="mt-2 line-clamp-2 text-[0.68rem] leading-relaxed text-[#7a7062]">
+                      <p className="mt-2 line-clamp-2 text-[0.72rem] leading-relaxed text-[#7a7062]">
                         {lead.message || lead.productInterest}
                       </p>
 
                       <div className="mt-2 flex items-center justify-between gap-2 border-t border-crm-line/70 pt-2">
-                        <span className="truncate text-[0.58rem] uppercase tracking-[0.1em] text-[#a19683]">
+                        <span className="truncate text-[0.64rem] uppercase tracking-[0.1em] text-[#a19683]">
                           {lead.productInterest}
                         </span>
                         {lead.valueIdr > 0 && (
-                          <span className="shrink-0 text-[0.65rem] font-semibold text-[#5f5548]">
+                          <span className="shrink-0 text-[0.68rem] font-semibold text-[#5f5548]">
                             {formatIdr(lead.valueIdr)}
                           </span>
                         )}
@@ -376,7 +376,7 @@ export function LeadsBoard({ initial }: { initial: CrmLead[] }) {
                         <button
                           type="button"
                           onClick={() => setSelected({ ...lead })}
-                          className="min-h-10 rounded border border-crm-line px-3 text-[0.62rem] font-medium text-[#5f5548] active:bg-[#faf6ee]"
+                          className="min-h-10 rounded border border-crm-line px-3 text-[0.66rem] font-medium text-[#5f5548] active:bg-[#faf6ee]"
                         >
                           Open card
                         </button>
@@ -385,7 +385,7 @@ export function LeadsBoard({ initial }: { initial: CrmLead[] }) {
                   );
                 })}
                 {stageLeads.length === 0 && (
-                  <p className="px-2 py-6 text-center text-[0.66rem] text-[#c0b6a5]">
+                  <p className="px-2 py-6 text-center text-[0.70rem] text-[#c0b6a5]">
                     Nothing at this stage.
                   </p>
                 )}
@@ -409,7 +409,7 @@ export function LeadsBoard({ initial }: { initial: CrmLead[] }) {
             <div className="space-y-3 px-5 py-4">
               <div className="flex flex-wrap items-center gap-2">
                 <LeadPill status={selected.status} />
-                <span className="text-[0.62rem] text-[#8b8173]">
+                <span className="text-[0.66rem] text-[#8b8173]">
                   {selected.country} · {timeAgo(selected.createdAt)}
                 </span>
               </div>
@@ -469,7 +469,7 @@ export function LeadsBoard({ initial }: { initial: CrmLead[] }) {
                     }
                     className="crm-input !py-1.5"
                   />
-                  <p className="mt-1 text-[0.58rem] text-[#a19683]">
+                  <p className="mt-1 text-[0.64rem] text-[#a19683]">
                     Used for the open-pipeline total.
                   </p>
                 </div>
@@ -492,7 +492,7 @@ export function LeadsBoard({ initial }: { initial: CrmLead[] }) {
               <div className="flex flex-wrap gap-2">
                 <a
                   href={`mailto:${selected.email}?subject=${encodeURIComponent("Tahura Boots — your enquiry")}`}
-                  className="rounded-lg border border-crm-line px-3 py-2 text-[0.6rem] font-semibold uppercase tracking-[0.1em] text-[#5f5548] hover:border-[#c6b699]"
+                  className="rounded-lg border border-crm-line px-3 py-2 text-[0.66rem] font-semibold uppercase tracking-[0.1em] text-[#5f5548] hover:border-[#c6b699]"
                 >
                   Email
                 </a>
@@ -501,7 +501,7 @@ export function LeadsBoard({ initial }: { initial: CrmLead[] }) {
                     href={`https://wa.me/${selected.phone.replace(/[^0-9]/g, "")}`}
                     target="_blank"
                     rel="noreferrer"
-                    className="rounded-lg border border-crm-line px-3 py-2 text-[0.6rem] font-semibold uppercase tracking-[0.1em] text-[#5f5548] hover:border-[#c6b699]"
+                    className="rounded-lg border border-crm-line px-3 py-2 text-[0.66rem] font-semibold uppercase tracking-[0.1em] text-[#5f5548] hover:border-[#c6b699]"
                   >
                     WhatsApp
                   </a>
@@ -509,7 +509,7 @@ export function LeadsBoard({ initial }: { initial: CrmLead[] }) {
                 <button
                   type="button"
                   onClick={() => setPendingDelete(selected)}
-                  className="rounded-lg border border-transparent px-3 py-2 text-[0.6rem] font-semibold uppercase tracking-[0.1em] text-[#a19683] hover:border-[#dfc0bb] hover:bg-[#f1dedb] hover:text-[#88423a]"
+                  className="rounded-lg border border-transparent px-3 py-2 text-[0.66rem] font-semibold uppercase tracking-[0.1em] text-[#a19683] hover:border-[#dfc0bb] hover:bg-[#f1dedb] hover:text-[#88423a]"
                 >
                   Delete
                 </button>
@@ -518,7 +518,7 @@ export function LeadsBoard({ initial }: { initial: CrmLead[] }) {
                 type="button"
                 onClick={saveCard}
                 disabled={savingCard || busy === selected.id}
-                className="rounded-lg bg-ink px-4 py-2.5 text-[0.6rem] font-semibold uppercase tracking-[0.12em] text-paper transition-colors hover:bg-ink-3 disabled:opacity-60"
+                className="rounded-lg bg-ink px-4 py-2.5 text-[0.66rem] font-semibold uppercase tracking-[0.12em] text-paper transition-colors hover:bg-ink-3 disabled:opacity-60"
               >
                 {savingCard ? "Saving…" : "Save card"}
               </button>
@@ -576,10 +576,10 @@ export function LeadsBoard({ initial }: { initial: CrmLead[] }) {
             </div>
           </div>
           <div className="flex items-center justify-end gap-2 border-t border-crm-line px-5 py-4 sheet-actions">
-            <button type="button" onClick={() => setCreating(false)} className="rounded-lg border border-crm-line px-4 py-2.5 text-[0.62rem] font-semibold uppercase tracking-[0.12em] text-[#7a7062]">
+            <button type="button" onClick={() => setCreating(false)} className="rounded-lg border border-crm-line px-4 py-2.5 text-[0.66rem] font-semibold uppercase tracking-[0.12em] text-[#7a7062]">
               Cancel
             </button>
-            <button type="submit" disabled={savingNew} className="rounded-lg bg-ink px-4 py-2.5 text-[0.62rem] font-semibold uppercase tracking-[0.12em] text-paper transition-colors hover:bg-ink-3 disabled:opacity-60">
+            <button type="submit" disabled={savingNew} className="rounded-lg bg-ink px-4 py-2.5 text-[0.66rem] font-semibold uppercase tracking-[0.12em] text-paper transition-colors hover:bg-ink-3 disabled:opacity-60">
               {savingNew ? "Adding…" : "Add lead"}
             </button>
           </div>

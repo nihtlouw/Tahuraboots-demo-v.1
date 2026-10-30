@@ -418,12 +418,12 @@ export function OrdersManager({
               type="button"
               onClick={() => changeFilter(tab.id)}
               aria-pressed={filter === tab.id}
-              className={`shrink-0 rounded-lg px-3 py-2 text-[0.65rem] font-medium transition-colors ${
+              className={`shrink-0 rounded-lg px-3 py-2 text-[0.68rem] font-medium transition-colors ${
                 filter === tab.id ? "bg-ink text-paper" : "text-[#7a7062] hover:bg-[#f4eee2]"
               }`}
             >
               {tab.label}
-              <span className={`ml-1.5 text-[0.56rem] ${filter === tab.id ? "text-paper/60" : "text-[#a19683]"}`}>
+              <span className={`ml-1.5 text-[0.64rem] ${filter === tab.id ? "text-paper/60" : "text-[#a19683]"}`}>
                 {counts(tab.id)}
               </span>
             </button>
@@ -450,7 +450,7 @@ export function OrdersManager({
               setPage(1);
             }}
             aria-label="Sort orders"
-            className="min-h-11 min-w-0 flex-1 rounded-lg border border-crm-line bg-white px-2.5 text-[0.68rem] text-[#3c332a] outline-none focus:border-[#b08c52] sm:min-h-0 sm:flex-none sm:py-2.5 sm:text-[0.64rem]"
+            className="min-h-11 min-w-0 flex-1 rounded-lg border border-crm-line bg-white px-2.5 text-[0.72rem] text-[#3c332a] outline-none focus:border-[#b08c52] sm:min-h-0 sm:flex-none sm:py-2.5 sm:text-[0.68rem]"
           >
             {sortOptions.map((option) => (
               <option key={option.id} value={option.id}>
@@ -461,7 +461,7 @@ export function OrdersManager({
           <button
             type="button"
             onClick={exportCsv}
-            className="min-h-11 shrink-0 rounded-lg border border-crm-line bg-white px-3 text-[0.62rem] font-semibold uppercase tracking-[0.12em] text-[#5f5548] transition-colors hover:border-[#c6b699] active:bg-[#faf6ee] sm:min-h-0 sm:py-2.5"
+            className="min-h-11 shrink-0 rounded-lg border border-crm-line bg-white px-3 text-[0.66rem] font-semibold uppercase tracking-[0.12em] text-[#5f5548] transition-colors hover:border-[#c6b699] active:bg-[#faf6ee] sm:min-h-0 sm:py-2.5"
           >
             Export CSV
           </button>
@@ -471,7 +471,7 @@ export function OrdersManager({
               resetComposer();
               setCreating(true);
             }}
-            className="min-h-11 shrink-0 rounded-lg bg-[#7a5a2e] px-3.5 text-[0.62rem] font-semibold uppercase tracking-[0.12em] text-white transition-colors hover:bg-[#5f451f] active:bg-[#5f451f] sm:min-h-0 sm:py-2.5"
+            className="min-h-11 shrink-0 rounded-lg bg-[#7a5a2e] px-3.5 text-[0.66rem] font-semibold uppercase tracking-[0.12em] text-white transition-colors hover:bg-[#5f451f] active:bg-[#5f451f] sm:min-h-0 sm:py-2.5"
           >
             + New order
           </button>
@@ -487,11 +487,11 @@ export function OrdersManager({
             {selected.length} selected
           </strong>
           <label className="flex items-center gap-2">
-            <span className="text-[0.62rem] uppercase tracking-[0.12em] text-[#a19683]">Set status</span>
+            <span className="text-[0.66rem] uppercase tracking-[0.12em] text-[#a19683]">Set status</span>
             <select
               value={bulkStatus}
               onChange={(event) => setBulkStatus(event.target.value)}
-              className="rounded-md border border-crm-line bg-white px-2 py-1.5 text-[0.68rem] outline-none focus:border-[#b08c52]"
+              className="rounded-md border border-crm-line bg-white px-2 py-1.5 text-[0.72rem] outline-none focus:border-[#b08c52]"
             >
               {ORDER_STATUSES.map((status) => (
                 <option key={status} value={status}>{orderStatusMeta[status].label}</option>
@@ -502,18 +502,18 @@ export function OrdersManager({
             type="button"
             onClick={applyBulkStatus}
             disabled={bulkBusy}
-            className="rounded-md bg-[#7a5a2e] px-3 py-1.5 text-[0.6rem] font-semibold uppercase tracking-[0.12em] text-white transition-colors hover:bg-[#5f451f] disabled:opacity-60"
+            className="rounded-md bg-[#7a5a2e] px-3 py-1.5 text-[0.66rem] font-semibold uppercase tracking-[0.12em] text-white transition-colors hover:bg-[#5f451f] disabled:opacity-60"
           >
             {bulkBusy ? "Saving…" : "Apply"}
           </button>
           <button
             type="button"
             onClick={() => setSelectedIds([])}
-            className="text-[0.62rem] text-[#8b8173] underline-offset-4 hover:underline"
+            className="text-[0.66rem] text-[#8b8173] underline-offset-4 hover:underline"
           >
             Clear selection
           </button>
-          <span className="text-[0.6rem] text-[#a19683]">
+          <span className="text-[0.66rem] text-[#a19683]">
             Cancelling returns pairs to the shelf automatically.
           </span>
         </div>
@@ -523,12 +523,12 @@ export function OrdersManager({
         title="Order ledger"
         subtitle={`${filtered.length} orders in view · page ${currentPage}/${totalPages}`}
         action={
-          <label className="flex cursor-pointer items-center gap-2 text-[0.62rem] text-[#8b8173]">
+          <label className="-my-2 flex min-h-11 cursor-pointer items-center gap-2 text-[0.66rem] text-[#8b8173] sm:my-0 sm:min-h-0">
             <input
               type="checkbox"
               checked={allPageSelected}
               onChange={togglePage}
-              className="h-3.5 w-3.5 accent-[#7a5a2e]"
+              className="h-5 w-5 accent-[#7a5a2e] sm:h-3.5 sm:w-3.5"
             />
             Select this page
           </label>
@@ -546,23 +546,23 @@ export function OrdersManager({
                       checked={selected.includes(order.id)}
                       onChange={() => toggleRow(order.id)}
                       aria-label={`Select order ${order.orderNumber}`}
-                      className="h-4 w-4 accent-[#7a5a2e] sm:h-3.5 sm:w-3.5"
+                      className="h-5 w-5 accent-[#7a5a2e] sm:h-3.5 sm:w-3.5"
                     />
                   </label>
                   <div className="min-w-0">
                     <p className="text-[0.76rem] font-semibold text-[#221b15]">{order.orderNumber}</p>
-                    <p className="text-[0.62rem] text-[#a19683]">{formatDate(order.createdAt)}</p>
+                    <p className="text-[0.66rem] text-[#a19683]">{formatDate(order.createdAt)}</p>
                   </div>
                   <div className="col-span-2 flex min-w-0 items-center gap-2.5 sm:col-span-1">
                     <Avatar name={order.customerName} />
                     <div className="min-w-0">
                       <p className="truncate text-[0.74rem] text-[#3c332a]">{order.customerName}</p>
-                      <p className="truncate text-[0.6rem] text-[#a19683]">{order.city}, {order.country}</p>
+                      <p className="truncate text-[0.66rem] text-[#a19683]">{order.city}, {order.country}</p>
                     </div>
                   </div>
                   <div className="text-right sm:min-w-[104px]">
                     <p className="text-[0.76rem] font-semibold text-[#221b15]">{formatIdr(order.totalIdr)}</p>
-                    <p className="text-[0.6rem] text-[#a19683]">{pairsIn(order)} pair(s)</p>
+                    <p className="text-[0.66rem] text-[#a19683]">{pairsIn(order)} pair(s)</p>
                   </div>
                   <div className="col-span-3 flex items-center gap-2 sm:col-span-1 sm:justify-end">
                     <select
@@ -574,7 +574,7 @@ export function OrdersManager({
                       }}
                       disabled={busy === order.id}
                       aria-label={`Status for ${order.orderNumber}`}
-                      className="min-h-11 flex-1 rounded-lg border border-crm-line bg-white px-2 text-[0.72rem] font-medium text-[#3c332a] outline-none focus:border-[#b08c52] disabled:opacity-60 sm:min-h-0 sm:flex-none sm:py-1.5 sm:text-[0.66rem]"
+                      className="min-h-11 flex-1 rounded-lg border border-crm-line bg-white px-2 text-[0.72rem] font-medium text-[#3c332a] outline-none focus:border-[#b08c52] disabled:opacity-60 sm:min-h-0 sm:flex-none sm:py-1.5 sm:text-[0.70rem]"
                     >
                       {ORDER_STATUSES.map((status) => (
                         <option key={status} value={status}>{orderStatusMeta[status].label}</option>
@@ -595,13 +595,13 @@ export function OrdersManager({
                 {isOpen && (
                   <div className="grid gap-4 border-t border-dashed border-crm-line bg-[#fdfbf7] px-4 py-4 lg:grid-cols-[1.3fr_1fr]">
                     <div>
-                      <p className="text-[0.56rem] font-semibold uppercase tracking-[0.16em] text-[#a19683]">Pairs in this order</p>
+                      <p className="text-[0.64rem] font-semibold uppercase tracking-[0.16em] text-[#a19683]">Pairs in this order</p>
                       <ul className="mt-2 space-y-1.5">
                         {order.items.map((item) => (
                           <li key={item.id} className="flex items-center justify-between gap-3 rounded-lg border border-crm-line bg-white px-3 py-2">
                             <span className="text-[0.72rem] text-[#3c332a]">
                               {item.productName}
-                              <span className="ml-2 text-[0.6rem] text-[#a19683]">EU {item.size} · ×{item.quantity}</span>
+                              <span className="ml-2 text-[0.66rem] text-[#a19683]">EU {item.size} · ×{item.quantity}</span>
                             </span>
                             <span className="text-[0.7rem] text-[#5f5548]">{formatIdr(item.unitPriceIdr * item.quantity)}</span>
                           </li>
@@ -615,7 +615,7 @@ export function OrdersManager({
                       )}
                     </div>
                     <div className="space-y-2">
-                      <p className="text-[0.56rem] font-semibold uppercase tracking-[0.16em] text-[#a19683]">Customer</p>
+                      <p className="text-[0.64rem] font-semibold uppercase tracking-[0.16em] text-[#a19683]">Customer</p>
                       <div className="space-y-1 text-[0.7rem] text-[#5f5548]">
                         <p className="break-all">{order.customerEmail}</p>
                         <p>{order.customerPhone || "No phone on file"}</p>
@@ -629,13 +629,13 @@ export function OrdersManager({
                         <button
                           type="button"
                           onClick={() => setEditing({ ...order })}
-                          className="min-h-10 rounded-md border border-crm-line bg-white px-3 text-[0.64rem] font-medium text-[#5f5548] active:bg-[#faf6ee]"
+                          className="min-h-10 rounded-md border border-crm-line bg-white px-3 text-[0.68rem] font-medium text-[#5f5548] active:bg-[#faf6ee]"
                         >
                           Edit details
                         </button>
                         <a
                           href={`mailto:${order.customerEmail}?subject=${encodeURIComponent(`Your Tahura order ${order.orderNumber}`)}`}
-                          className="min-h-10 rounded-md border border-crm-line bg-white px-3 text-[0.64rem] font-medium text-[#5f5548] active:bg-[#faf6ee]"
+                          className="min-h-10 rounded-md border border-crm-line bg-white px-3 text-[0.68rem] font-medium text-[#5f5548] active:bg-[#faf6ee]"
                         >
                           Email customer
                         </a>
@@ -644,7 +644,7 @@ export function OrdersManager({
                             href={`https://wa.me/${order.customerPhone.replace(/[^0-9]/g, "")}`}
                             target="_blank"
                             rel="noreferrer"
-                            className="min-h-10 rounded-md border border-crm-line bg-white px-3 text-[0.64rem] font-medium text-[#5f5548] active:bg-[#faf6ee]"
+                            className="min-h-10 rounded-md border border-crm-line bg-white px-3 text-[0.68rem] font-medium text-[#5f5548] active:bg-[#faf6ee]"
                           >
                             WhatsApp
                           </a>
@@ -653,7 +653,7 @@ export function OrdersManager({
                           type="button"
                           onClick={() => setPendingDelete(order)}
                           disabled={busy === order.id}
-                          className="min-h-10 rounded-md border border-transparent px-3 text-[0.64rem] text-[#a19683] active:bg-[#f1dedb] active:text-[#88423a]"
+                          className="min-h-10 rounded-md border border-transparent px-3 text-[0.68rem] text-[#a19683] active:bg-[#f1dedb] active:text-[#88423a]"
                         >
                           Delete
                         </button>
@@ -674,7 +674,7 @@ export function OrdersManager({
         )}
 
         {totalPages > 1 && (
-          <div className="flex items-center justify-between gap-3 border-t border-crm-line px-4 py-3 text-[0.66rem] text-[#8b8173]">
+          <div className="flex items-center justify-between gap-3 border-t border-crm-line px-4 py-3 text-[0.70rem] text-[#8b8173]">
             <span>
               Showing {(currentPage - 1) * PAGE_SIZE + 1}–
               {Math.min(currentPage * PAGE_SIZE, filtered.length)} of {filtered.length}
@@ -761,7 +761,7 @@ export function OrdersManager({
                       },
                     ])
                   }
-                  className="text-[0.6rem] font-semibold uppercase tracking-[0.12em] text-[#8a6a3c] hover:text-[#221b15]"
+                  className="text-[0.66rem] font-semibold uppercase tracking-[0.12em] text-[#8a6a3c] hover:text-[#221b15]"
                 >
                   + Add another pair
                 </button>
@@ -900,7 +900,7 @@ export function OrdersManager({
                         </button>
                       </div>
 
-                      <div className="mt-1.5 flex items-center justify-between text-[0.6rem]">
+                      <div className="mt-1.5 flex items-center justify-between text-[0.66rem]">
                         <span className="text-[#a19683]">
                           {availability === "ready" && selectedProduct
                             ? `${selectedProduct.stock} pair(s) on the shelf`
@@ -926,14 +926,14 @@ export function OrdersManager({
 
           <div className="flex flex-col gap-3 border-t border-crm-line px-5 py-4 sm:flex-row sm:items-center sm:justify-between sheet-actions">
             <div>
-              <p className="text-[0.56rem] font-semibold uppercase tracking-[0.14em] text-[#a19683]">Order total</p>
+              <p className="text-[0.64rem] font-semibold uppercase tracking-[0.14em] text-[#a19683]">Order total</p>
               <p className="font-display text-xl text-[#221b15]">{formatIdr(total)}</p>
             </div>
             <div className="flex gap-2">
-              <button type="button" onClick={() => setCreating(false)} className="rounded-lg border border-crm-line px-4 py-2.5 text-[0.62rem] font-semibold uppercase tracking-[0.12em] text-[#7a7062]">
+              <button type="button" onClick={() => setCreating(false)} className="rounded-lg border border-crm-line px-4 py-2.5 text-[0.66rem] font-semibold uppercase tracking-[0.12em] text-[#7a7062]">
                 Cancel
               </button>
-              <button type="submit" disabled={saving || orderableOptions.length === 0} className="rounded-lg bg-ink px-4 py-2.5 text-[0.62rem] font-semibold uppercase tracking-[0.12em] text-paper transition-colors hover:bg-ink-3 disabled:opacity-60">
+              <button type="submit" disabled={saving || orderableOptions.length === 0} className="rounded-lg bg-ink px-4 py-2.5 text-[0.66rem] font-semibold uppercase tracking-[0.12em] text-paper transition-colors hover:bg-ink-3 disabled:opacity-60">
                 {saving ? "Logging…" : "Log order"}
               </button>
             </div>
@@ -985,16 +985,16 @@ export function OrdersManager({
                 <label className="crm-label" htmlFor="edit-notes">Studio notes</label>
                 <textarea id="edit-notes" rows={3} value={editing.notes} onChange={(event) => setEditing({ ...editing, notes: event.target.value })} className="crm-input resize-none" />
               </div>
-              <p className="text-[0.62rem] text-[#a19683] sm:col-span-2">
+              <p className="text-[0.66rem] text-[#a19683] sm:col-span-2">
                 Pairs, prices and totals can&apos;t be changed here — delete the order and log it again if the pairs are wrong.
               </p>
             </div>
 
             <div className="flex items-center justify-end gap-2 border-t border-crm-line px-5 py-4 sheet-actions">
-              <button type="button" onClick={() => setEditing(null)} className="rounded-lg border border-crm-line px-4 py-2.5 text-[0.62rem] font-semibold uppercase tracking-[0.12em] text-[#7a7062]">
+              <button type="button" onClick={() => setEditing(null)} className="rounded-lg border border-crm-line px-4 py-2.5 text-[0.66rem] font-semibold uppercase tracking-[0.12em] text-[#7a7062]">
                 Cancel
               </button>
-              <button type="submit" disabled={saving} className="rounded-lg bg-ink px-4 py-2.5 text-[0.62rem] font-semibold uppercase tracking-[0.12em] text-paper transition-colors hover:bg-ink-3 disabled:opacity-60">
+              <button type="submit" disabled={saving} className="rounded-lg bg-ink px-4 py-2.5 text-[0.66rem] font-semibold uppercase tracking-[0.12em] text-paper transition-colors hover:bg-ink-3 disabled:opacity-60">
                 {saving ? "Saving…" : "Save changes"}
               </button>
             </div>
