@@ -102,7 +102,7 @@ src/
 └─ lib/                        # auth, katalog, format, data situs
 drizzle/                       # migration SQL (hasil drizzle-kit generate)
 public/images/                 # foto produk & editorial
-public/images/catalog/         # 12 foto siluet rilis kedua (dibuat scripts/ig-photos.py)
+public/images/catalog/         # 12 foto siluet rilis kedua (dibuat scripts/ig-restore.py)
 public/fonts/                  # Inter + Fraunces (woff2, lokal)
 ```
 
@@ -150,6 +150,7 @@ Semua tabel punya index untuk kolom yang dipakai filter/sortir CRM (`status`,
 | `npm run db:studio` | Drizzle Studio (GUI database). |
 | `npm run db:check` | Verifikasi koneksi + daftar tabel & jumlah baris. Exit code 1 kalau skema belum lengkap. |
 | `npm run pages:build` | Rekam snapshot UI statis ke `docs/` untuk GitHub Pages (butuh server jalan di :3000). |
+| `python3 scripts/ig-restore.py` | Restorasi AI foto katalog: Real-ESRGAN x4 → 1160 px → tone match ke foto lama. Butuh `pillow numpy opencv-python-headless onnxruntime`; model 64 MB diunduh otomatis ke `.cache/ig-models/`. |
 
 ### Fitur CRM
 

@@ -1,6 +1,12 @@
 #!/usr/bin/env python3
 """Ubah ubin grid Instagram menjadi foto produk untuk storefront.
 
+CATATAN: pipeline di berkas ini adalah versi awal (Lanczos + penajaman kuat)
+dan sengaja dipertahankan sebagai fallback tanpa dependensi. Untuk hasil yang
+dipakai di repo, jalankan `scripts/ig-restore.py` — ia memakai Real-ESRGAN x4
+lalu menurunkan ke 1160 px dengan penajaman ringan, sehingga detail jahitan
+naik tanpa halo. Berkas ini tetap berguna kalau onnxruntime tidak tersedia.
+
 Sumber: documentation/instagram/tiles/*.jpg (potongan asli grid, 381 px lebar).
 
 Ikon carousel Instagram (kotak putih + panah) selalu berada di **sudut kanan
@@ -65,6 +71,15 @@ def crop_below_icon(im: Image.Image) -> Image.Image:
 
 
 def main() -> None:
+    sentinel = OUT / ".restored-by-ai"
+    if sentinel.exists():
+        print(
+            "Folder sudah berisi hasil restorasi AI (lihat .restored-by-ai).\n"
+            "Lewati: skrip ini akan menimpa foto 1160 px dengan versi 800 px.\n"
+            "Pakai scripts/ig-restore.py, atau hapus sentinel kalau memang ingin fallback."
+        )
+        return
+
     OUT.mkdir(parents=True, exist_ok=True)
     for tile, slug in PICKS.items():
         source = next(TILES.glob(f"{tile}*.jpg"))
