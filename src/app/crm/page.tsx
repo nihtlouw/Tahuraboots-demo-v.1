@@ -116,6 +116,10 @@ export default async function CrmOverviewPage() {
         .limit(6),
     ]);
 
+  // `subscriberRows` adalah hasil query count (selalu satu baris), bukan daftar
+  // email; memakai `.length` membuat label selalu "1 signup" walau kosong.
+  const subscriberCount = Number(subscriberRows[0]?.count ?? 0);
+
   const revenue = orderRows
     .filter((row) => PAID_STATES.includes(row.status))
     .reduce((sum, row) => sum + row.totalIdr, 0);
@@ -487,7 +491,7 @@ export default async function CrmOverviewPage() {
 
           <Panel
             title="The cutting list"
-            subtitle={`${subscriberRows.length} signup${subscriberRows.length === 1 ? "" : "s"} · newsletter & waitlist`}
+            subtitle={`${subscriberCount} signup${subscriberCount === 1 ? "" : "s"} · newsletter & waitlist`}
           >
             <ul className="divide-y divide-crm-line/70">
               {recentSubscribers.map((row) => (
