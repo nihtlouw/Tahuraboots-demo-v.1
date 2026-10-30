@@ -56,3 +56,6 @@ Thumbs.db
 
 # Artefak build katalog IG (galeri 1,3 MB, bisa dibangun ulang)
 documentation/instagram/katalog-standalone.html
+
+# Cache model AI (Real-ESRGAN ~64 MB) — diunduh ulang oleh scripts/ig-restore.py
+.cache/
