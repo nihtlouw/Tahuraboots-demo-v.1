@@ -5,6 +5,14 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { resolveAvailability, PRODUCT_STATUSES, productStatusLabels } from "@/lib/catalog";
 import { formatIdr } from "@/lib/format";
+import {
+  Banner,
+  ConfirmDialog,
+  Modal,
+  ModalHeader,
+  Toast,
+  useToast,
+} from "@/components/crm/overlay";
 import { csvStamp, downloadCsv } from "@/lib/csv";
 
 export type CrmProduct = {
@@ -66,17 +74,26 @@ const emptyDraft: Draft = {
   featured: false,
 };
 
+function sizeRange(sizes: string) {
+  const list = sizes.split(",").map((size) => size.trim()).filter(Boolean);
+  if (list.length === 0) return "—";
+  if (list.length === 1) return `EU ${list[0]}`;
+  return `EU ${list[0]}–${list[list.length - 1]}`;
+}
+
 export function ProductsManager({ initial }: { initial: CrmProduct[] }) {
   const router = useRouter();
   const [items, setItems] = useState(initial);
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState("all");
   const [draft, setDraft] = useState<Draft | null>(null);
-  const [busy, setBusy] = useState<number | "new" | null>(null);
+  const [busy, setBusy] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [sort, setSort] = useState<"shelf" | "price-desc" | "price-asc" | "sold" | "name">("shelf");
-  const [toast, setToast] = useState<string | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<CrmProduct | null>(null);
+  const [stockDrafts, setStockDrafts] = useState<Record<number, string>>({});
+  const { toast, show: showToast, dismiss: dismissToast } = useToast();
 
   const filtered = useMemo(() => {
     const rows = items.filter((item) => {
@@ -132,14 +149,63 @@ export function ProductsManager({ initial }: { initial: CrmProduct[] }) {
       };
       if (!response.ok || !data.ok || !data.product) {
         setError(data.error ?? "Could not update the pair.");
-        return;
+        return false;
       }
       replaceItem(data.product);
       router.refresh();
+      return true;
     } catch {
       setError("Network error — the shelf was not updated.");
+      return false;
     } finally {
       setBusy(null);
+    }
+  }
+
+  function clearStockDraft(id: number) {
+    setStockDrafts((current) => {
+      const next = { ...current };
+      delete next[id];
+      return next;
+    });
+  }
+
+  async function commitStock(product: CrmProduct) {
+    const raw = stockDrafts[product.id];
+    if (raw === undefined) return;
+
+    // Kolom dikosongkan = batal, bukan "set stok jadi 0".
+    if (raw.trim() === "") {
+      clearStockDraft(product.id);
+      return;
+    }
+
+    const next = Number(raw);
+    if (!Number.isFinite(next) || next < 0) {
+      setError("Stock must be zero or more.");
+      clearStockDraft(product.id);
+      return;
+    }
+
+    const rounded = Math.round(next);
+    if (rounded === product.stock) {
+      clearStockDraft(product.id);
+      return;
+    }
+
+    const ok = await patch(product.id, { stock: rounded });
+    clearStockDraft(product.id);
+    if (ok) showToast(`${product.name}: stock set to ${rounded}.`);
+  }
+
+  async function toggleFeatured(product: CrmProduct) {
+    const ok = await patch(product.id, { featured: !product.featured });
+    if (ok) {
+      showToast(
+        product.featured
+          ? `${product.name} removed from the storefront picks.`
+          : `${product.name} is now featured on the storefront.`,
+      );
     }
   }
 
@@ -182,8 +248,10 @@ export function ProductsManager({ initial }: { initial: CrmProduct[] }) {
       }
       if (draft.id) {
         replaceItem(data.product);
+        showToast(`${data.product.name} updated.`);
       } else {
         setItems((current) => [...current, data.product as CrmProduct]);
+        showToast(`${data.product.name} added to the catalogue.`);
       }
       setDraft(null);
       router.refresh();
@@ -194,20 +262,21 @@ export function ProductsManager({ initial }: { initial: CrmProduct[] }) {
     }
   }
 
-  async function remove(id: number, name: string) {
-    if (!window.confirm(`Remove ${name} from the catalogue? Past orders are kept.`)) {
-      return;
-    }
-    setBusy(id);
+  async function confirmRemove() {
+    if (!pendingDelete) return;
+    const product = pendingDelete;
+    setBusy(product.id);
     setError(null);
     try {
-      const response = await fetch(`/api/crm/products/${id}`, { method: "DELETE" });
+      const response = await fetch(`/api/crm/products/${product.id}`, { method: "DELETE" });
       const data = (await response.json()) as { ok?: boolean; error?: string };
       if (!response.ok || !data.ok) {
         setError(data.error ?? "Could not remove the pair.");
         return;
       }
-      setItems((current) => current.filter((item) => item.id !== id));
+      setItems((current) => current.filter((item) => item.id !== product.id));
+      setPendingDelete(null);
+      showToast(`${product.name} removed from the catalogue. Past orders are kept.`);
       router.refresh();
     } catch {
       setError("Network error — the pair was not removed.");
@@ -248,6 +317,7 @@ export function ProductsManager({ initial }: { initial: CrmProduct[] }) {
               key={tab.id}
               type="button"
               onClick={() => setFilter(tab.id)}
+              aria-pressed={filter === tab.id}
               className={`shrink-0 rounded-lg px-3 py-2 text-[0.66rem] font-medium transition-colors ${
                 filter === tab.id
                   ? "bg-ink text-paper"
@@ -261,12 +331,13 @@ export function ProductsManager({ initial }: { initial: CrmProduct[] }) {
             </button>
           ))}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Search styles, leathers…"
-            className="crm-input !w-full sm:!w-56"
+            aria-label="Search pairs"
+            className="crm-input !w-full sm:!w-52"
           />
           <select
             value={sort}
@@ -286,7 +357,6 @@ export function ProductsManager({ initial }: { initial: CrmProduct[] }) {
               const ok = downloadCsv(
                 csvStamp("tahura-pairs"),
                 filtered.map((product) => ({
-                  slug: product.id,
                   name: product.name,
                   model: product.model,
                   leather: product.leather,
@@ -299,7 +369,8 @@ export function ProductsManager({ initial }: { initial: CrmProduct[] }) {
                   sizes: product.sizes,
                 })),
               );
-              setToast(ok ? `${filtered.length} pairs diekspor ke CSV.` : "Tidak ada baris untuk diekspor.");
+              if (ok) showToast(`${filtered.length} pairs exported to CSV.`);
+              else setError("There is nothing to export in this view.");
             }}
             className="shrink-0 rounded-lg border border-crm-line bg-white px-3 py-2.5 text-[0.62rem] font-semibold uppercase tracking-[0.12em] text-[#5f5548] transition-colors hover:border-[#c6b699]"
           >
@@ -315,23 +386,12 @@ export function ProductsManager({ initial }: { initial: CrmProduct[] }) {
         </div>
       </div>
 
-      {error && (
-        <div className="flex items-center justify-between gap-3 rounded-lg border border-[#dfc0bb] bg-[#f1dedb] px-4 py-2.5 text-[0.76rem] text-[#88423a]">
-          {error}
-          <button type="button" onClick={() => setError(null)} className="font-semibold">✕</button>
-        </div>
-      )}
-
-      {toast && (
-        <div role="status" className="flex items-center justify-between gap-3 rounded-lg border border-[#cbd8bf] bg-[#eef3e6] px-4 py-2.5 text-[0.76rem] text-[#4c6034]">
-          {toast}
-          <button type="button" onClick={() => setToast(null)} className="font-semibold">✕</button>
-        </div>
-      )}
+      {error && <Banner onDismiss={() => setError(null)}>{error}</Banner>}
+      <Toast toast={toast} onDismiss={dismissToast} />
 
       <div className="overflow-hidden rounded-xl border border-crm-line bg-white">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[900px] text-left">
+          <table className="w-full min-w-[940px] text-left">
             <thead>
               <tr className="border-b border-crm-line bg-[#faf7f1] text-[0.55rem] uppercase tracking-[0.14em] text-[#a19683]">
                 <th className="px-4 py-3 font-semibold">Pair</th>
@@ -345,6 +405,10 @@ export function ProductsManager({ initial }: { initial: CrmProduct[] }) {
             <tbody>
               {filtered.map((product) => {
                 const availability = resolveAvailability(product);
+                const draftValue = stockDrafts[product.id];
+                const stockValue = draftValue ?? String(product.stock);
+                const dirty = draftValue !== undefined && draftValue !== String(product.stock);
+
                 return (
                   <tr key={product.id} className="border-b border-crm-line/70 last:border-0 hover:bg-[#fdfbf7]">
                     <td className="px-4 py-3">
@@ -353,19 +417,35 @@ export function ProductsManager({ initial }: { initial: CrmProduct[] }) {
                           <Image src={product.imageUrl} alt={product.name} fill sizes="44px" className="object-cover" />
                         </div>
                         <div className="min-w-0">
-                          <p className="truncate text-[0.78rem] font-semibold text-[#221b15]">
-                            {product.name}
-                            {product.featured && (
-                              <span className="ml-2 rounded bg-[#f6e7c8] px-1.5 py-0.5 text-[0.5rem] uppercase tracking-[0.1em] text-[#7a5a17]">
-                                Pick
-                              </span>
-                            )}
-                          </p>
+                          <div className="flex items-center gap-1.5">
+                            <p className="truncate text-[0.78rem] font-semibold text-[#221b15]">
+                              {product.name}
+                            </p>
+                            <button
+                              type="button"
+                              onClick={() => toggleFeatured(product)}
+                              disabled={busy === product.id}
+                              aria-pressed={product.featured}
+                              aria-label={
+                                product.featured
+                                  ? `Remove ${product.name} from storefront picks`
+                                  : `Feature ${product.name} on the storefront`
+                              }
+                              title={product.featured ? "Featured on the storefront" : "Feature on the storefront"}
+                              className={`rounded px-1 text-[0.72rem] leading-none transition-colors disabled:opacity-40 ${
+                                product.featured
+                                  ? "text-[#b08c52]"
+                                  : "text-[#d8d0c1] hover:text-[#b08c52]"
+                              }`}
+                            >
+                              ★
+                            </button>
+                          </div>
                           <p className="truncate text-[0.62rem] text-[#a19683]">
                             {product.colorway} · {product.leather}
                           </p>
                           <p className="text-[0.56rem] uppercase tracking-[0.1em] text-[#c0b6a5]">
-                            {product.collectionName} · EU {product.sizes.split(",")[0]}–{product.sizes.split(",").slice(-1)}
+                            {product.collectionName} · {sizeRange(product.sizes)}
                           </p>
                         </div>
                       </div>
@@ -375,6 +455,7 @@ export function ProductsManager({ initial }: { initial: CrmProduct[] }) {
                         value={product.status}
                         onChange={(event) => patch(product.id, { status: event.target.value })}
                         disabled={busy === product.id}
+                        aria-label={`Catalogue status for ${product.name}`}
                         className={`rounded-lg border px-2 py-1.5 text-[0.68rem] font-medium outline-none ${
                           availability === "sold_out"
                             ? "border-[#dfc0bb] bg-[#f1dedb] text-[#88423a]"
@@ -401,24 +482,58 @@ export function ProductsManager({ initial }: { initial: CrmProduct[] }) {
                           type="button"
                           aria-label={`Reduce stock for ${product.name}`}
                           disabled={busy === product.id || product.stock === 0}
-                          onClick={() => patch(product.id, { stock: Math.max(0, product.stock - 1) })}
+                          onClick={() => {
+                            clearStockDraft(product.id);
+                            void patch(product.id, { stock: Math.max(0, product.stock - 1) });
+                          }}
                           className="flex h-7 w-7 items-center justify-center rounded-md text-[0.8rem] text-[#7a7062] transition-colors hover:bg-[#f4eee2] disabled:opacity-30"
                         >
                           −
                         </button>
-                        <span className="w-7 text-center text-[0.72rem] font-semibold text-[#221b15]">
-                          {product.stock}
-                        </span>
+                        <input
+                          type="number"
+                          min={0}
+                          value={stockValue}
+                          disabled={busy === product.id}
+                          aria-label={`Stock for ${product.name}`}
+                          onChange={(event) =>
+                            setStockDrafts((current) => ({
+                              ...current,
+                              [product.id]: event.target.value,
+                            }))
+                          }
+                          onBlur={() => void commitStock(product)}
+                          onKeyDown={(event) => {
+                            if (event.key === "Enter") {
+                              event.preventDefault();
+                              (event.target as HTMLInputElement).blur();
+                            }
+                            if (event.key === "Escape") {
+                              clearStockDraft(product.id);
+                            }
+                          }}
+                          className={`w-11 rounded-md bg-transparent text-center text-[0.72rem] font-semibold outline-none ${
+                            dirty ? "text-[#8a6a3c]" : "text-[#221b15]"
+                          }`}
+                        />
                         <button
                           type="button"
                           aria-label={`Increase stock for ${product.name}`}
                           disabled={busy === product.id}
-                          onClick={() => patch(product.id, { stock: product.stock + 1 })}
+                          onClick={() => {
+                            clearStockDraft(product.id);
+                            void patch(product.id, { stock: product.stock + 1 });
+                          }}
                           className="flex h-7 w-7 items-center justify-center rounded-md text-[0.8rem] text-[#7a7062] transition-colors hover:bg-[#f4eee2] disabled:opacity-30"
                         >
                           +
                         </button>
                       </div>
+                      {dirty && (
+                        <p className="mt-1 text-[0.55rem] uppercase tracking-[0.1em] text-[#b08c52]">
+                          Press Enter to save
+                        </p>
+                      )}
                     </td>
                     <td className="px-3 py-3 text-[0.72rem] text-[#3c332a]">{formatIdr(product.priceIdr)}</td>
                     <td className="px-3 py-3 text-[0.72rem] text-[#7a7062]">{product.unitsSold}</td>
@@ -449,7 +564,7 @@ export function ProductsManager({ initial }: { initial: CrmProduct[] }) {
                         </button>
                         <button
                           type="button"
-                          onClick={() => remove(product.id, product.name)}
+                          onClick={() => setPendingDelete(product)}
                           disabled={busy === product.id}
                           className="rounded-md border border-transparent px-2 py-1.5 text-[0.62rem] text-[#a19683] transition-colors hover:border-[#dfc0bb] hover:bg-[#f1dedb] hover:text-[#88423a] disabled:opacity-40"
                         >
@@ -471,76 +586,73 @@ export function ProductsManager({ initial }: { initial: CrmProduct[] }) {
         )}
       </div>
 
-      {draft && (
-        <div className="fixed inset-0 z-[60] flex items-start justify-center overflow-y-auto bg-ink/50 p-4 backdrop-blur-sm sm:items-center">
-          <form
-            onSubmit={save}
-            className="w-full max-w-2xl rounded-xl border border-crm-line bg-white shadow-xl"
-          >
-            <div className="flex items-start justify-between border-b border-crm-line px-5 py-4">
-              <div>
-                <p className="text-[0.58rem] font-semibold uppercase tracking-[0.16em] text-[#a8865a]">
-                  {draft.id ? "Edit the pair" : "Add to the catalogue"}
-                </p>
-                <h2 className="mt-1 font-display text-xl text-[#221b15]">
-                  {draft.id ? draft.name || "Untitled pair" : "New pair"}
-                </h2>
-              </div>
-              <button type="button" onClick={() => setDraft(null)} className="text-[#a19683] hover:text-[#221b15]">✕</button>
-            </div>
+      <Modal open={Boolean(draft)} onClose={() => setDraft(null)} labelledBy="pair-modal-title">
+        {draft && (
+          <form onSubmit={save}>
+            <ModalHeader
+              id="pair-modal-title"
+              eyebrow={draft.id ? "Edit the pair" : "Add to the catalogue"}
+              title={draft.id ? draft.name || "Untitled pair" : "New pair"}
+              onClose={() => setDraft(null)}
+            />
 
             <div className="grid gap-3 px-5 py-4 sm:grid-cols-2">
               <div className="sm:col-span-2">
-                <label className="crm-label">Style name</label>
-                <input required value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })} className="crm-input" placeholder="Bandung Toe-Cap" />
+                <label className="crm-label" htmlFor="pair-name">Style name</label>
+                <input id="pair-name" required value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })} className="crm-input" placeholder="Bandung Toe-Cap" />
               </div>
               <div>
-                <label className="crm-label">Model</label>
-                <input value={draft.model} onChange={(event) => setDraft({ ...draft, model: event.target.value })} className="crm-input" />
+                <label className="crm-label" htmlFor="pair-model">Model</label>
+                <input id="pair-model" value={draft.model} onChange={(event) => setDraft({ ...draft, model: event.target.value })} className="crm-input" />
               </div>
               <div>
-                <label className="crm-label">Collection</label>
-                <input value={draft.collectionName} onChange={(event) => setDraft({ ...draft, collectionName: event.target.value })} className="crm-input" />
+                <label className="crm-label" htmlFor="pair-collection">Collection</label>
+                <input id="pair-collection" value={draft.collectionName} onChange={(event) => setDraft({ ...draft, collectionName: event.target.value })} className="crm-input" />
               </div>
               <div>
-                <label className="crm-label">Leather</label>
-                <input value={draft.leather} onChange={(event) => setDraft({ ...draft, leather: event.target.value })} className="crm-input" />
+                <label className="crm-label" htmlFor="pair-leather">Leather</label>
+                <input id="pair-leather" value={draft.leather} onChange={(event) => setDraft({ ...draft, leather: event.target.value })} className="crm-input" />
               </div>
               <div>
-                <label className="crm-label">Colorway</label>
-                <input value={draft.colorway} onChange={(event) => setDraft({ ...draft, colorway: event.target.value })} className="crm-input" placeholder="Olive Grove" />
+                <label className="crm-label" htmlFor="pair-colorway">Colorway</label>
+                <input id="pair-colorway" value={draft.colorway} onChange={(event) => setDraft({ ...draft, colorway: event.target.value })} className="crm-input" placeholder="Olive Grove" />
               </div>
               <div>
-                <label className="crm-label">Price (IDR)</label>
-                <input required type="number" min={1} step={50000} value={draft.priceIdr} onChange={(event) => setDraft({ ...draft, priceIdr: event.target.value })} className="crm-input" />
+                <label className="crm-label" htmlFor="pair-price">Price (IDR)</label>
+                <input id="pair-price" required type="number" min={1} step={50000} value={draft.priceIdr} onChange={(event) => setDraft({ ...draft, priceIdr: event.target.value })} className="crm-input" />
               </div>
               <div>
-                <label className="crm-label">Pairs on the shelf</label>
-                <input type="number" min={0} value={draft.stock} onChange={(event) => setDraft({ ...draft, stock: event.target.value })} className="crm-input" />
+                <label className="crm-label" htmlFor="pair-stock">Pairs on the shelf</label>
+                <input id="pair-stock" type="number" min={0} value={draft.stock} onChange={(event) => setDraft({ ...draft, stock: event.target.value })} className="crm-input" />
               </div>
               <div>
-                <label className="crm-label">Catalogue status</label>
-                <select value={draft.status} onChange={(event) => setDraft({ ...draft, status: event.target.value })} className="crm-input">
+                <label className="crm-label" htmlFor="pair-status">Catalogue status</label>
+                <select id="pair-status" value={draft.status} onChange={(event) => setDraft({ ...draft, status: event.target.value })} className="crm-input">
                   {PRODUCT_STATUSES.map((status) => (
                     <option key={status} value={status}>{productStatusLabels[status]}</option>
                   ))}
                 </select>
               </div>
               <div>
-                <label className="crm-label">Size run</label>
-                <input value={draft.sizes} onChange={(event) => setDraft({ ...draft, sizes: event.target.value })} className="crm-input" placeholder="39,40,41,42,43" />
+                <label className="crm-label" htmlFor="pair-sizes">Size run</label>
+                <input id="pair-sizes" value={draft.sizes} onChange={(event) => setDraft({ ...draft, sizes: event.target.value })} className="crm-input" placeholder="39,40,41,42,43" />
               </div>
               <div className="sm:col-span-2">
-                <label className="crm-label">Photograph</label>
-                <select value={draft.imageUrl} onChange={(event) => setDraft({ ...draft, imageUrl: event.target.value })} className="crm-input">
-                  {images.map((image) => (
-                    <option key={image.value} value={image.value}>{image.label}</option>
-                  ))}
-                </select>
+                <label className="crm-label" htmlFor="pair-image">Photograph</label>
+                <div className="flex items-center gap-3">
+                  <div className="relative h-16 w-12 shrink-0 overflow-hidden rounded-md border border-crm-line bg-[#f1ebdf]">
+                    <Image src={draft.imageUrl} alt="" fill sizes="48px" className="object-cover" />
+                  </div>
+                  <select id="pair-image" value={draft.imageUrl} onChange={(event) => setDraft({ ...draft, imageUrl: event.target.value })} className="crm-input">
+                    {images.map((image) => (
+                      <option key={image.value} value={image.value}>{image.label}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
               <div className="sm:col-span-2">
-                <label className="crm-label">Storefront description</label>
-                <textarea rows={3} value={draft.description} onChange={(event) => setDraft({ ...draft, description: event.target.value })} className="crm-input resize-none" placeholder="What makes this pair worth the wait?" />
+                <label className="crm-label" htmlFor="pair-description">Storefront description</label>
+                <textarea id="pair-description" rows={3} value={draft.description} onChange={(event) => setDraft({ ...draft, description: event.target.value })} className="crm-input resize-none" placeholder="What makes this pair worth the wait?" />
               </div>
               <label className="flex items-center gap-2 text-[0.74rem] text-[#5f5548] sm:col-span-2">
                 <input type="checkbox" checked={draft.featured} onChange={(event) => setDraft({ ...draft, featured: event.target.checked })} className="h-4 w-4 accent-[#7a5a2e]" />
@@ -562,8 +674,18 @@ export function ProductsManager({ initial }: { initial: CrmProduct[] }) {
               </div>
             </div>
           </form>
-        </div>
-      )}
+        )}
+      </Modal>
+
+      <ConfirmDialog
+        open={Boolean(pendingDelete)}
+        title={`Remove ${pendingDelete?.name ?? "this pair"}?`}
+        message="It disappears from the storefront and the catalogue. Past orders keep their own copy of the name and price, so the ledger stays intact."
+        confirmLabel="Remove pair"
+        busy={busy === pendingDelete?.id}
+        onConfirm={confirmRemove}
+        onCancel={() => setPendingDelete(null)}
+      />
     </div>
   );
 }

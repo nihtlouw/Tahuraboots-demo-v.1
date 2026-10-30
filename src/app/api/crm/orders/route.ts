@@ -2,15 +2,18 @@ import { inArray, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { orderItems, orders, products } from "@/db/schema";
 import { isOwner, unauthorized } from "@/lib/auth";
-import { CHANNELS } from "@/lib/catalog";
+import { CHANNELS, resolveAvailability } from "@/lib/catalog";
 import { nextOrderNumber } from "@/lib/orders";
 import { ensureSeed } from "@/db/seed";
 
 export const dynamic = "force-dynamic";
 
+/** Batas wajar per baris supaya salah ketik tidak menguras shelf. */
+const MAX_QUANTITY = 20;
+
 type ItemPayload = {
   productId?: number | string;
-  size?: string;
+  size?: string | number;
   quantity?: number | string;
 };
 
@@ -24,6 +27,35 @@ type OrderPayload = {
   notes?: string;
   items?: ItemPayload[];
 };
+
+type Line = { productId: number; size: string; quantity: number };
+
+/**
+ * Rapikan baris pesanan: buang yang kosong, gabungkan produk+ukuran yang sama,
+ * dan jaga jumlahnya di rentang 1..MAX_QUANTITY.
+ */
+function normaliseLines(raw: ItemPayload[]): Line[] {
+  const merged = new Map<string, Line>();
+
+  for (const item of raw) {
+    const productId = Number(item.productId);
+    if (!Number.isFinite(productId)) continue;
+
+    const size = String(item.size ?? "42").trim().slice(0, 8) || "42";
+    const requested = Math.round(Number(item.quantity) || 1);
+    const quantity = Math.min(MAX_QUANTITY, Math.max(1, requested));
+    const key = `${productId}:${size}`;
+    const existing = merged.get(key);
+
+    if (existing) {
+      existing.quantity = Math.min(MAX_QUANTITY, existing.quantity + quantity);
+    } else {
+      merged.set(key, { productId, size, quantity });
+    }
+  }
+
+  return [...merged.values()];
+}
 
 export async function POST(request: Request) {
   if (!(await isOwner())) return unauthorized();
@@ -42,49 +74,68 @@ export async function POST(request: Request) {
       );
     }
 
-    const rawItems = (body.items ?? []).filter(
-      (item) => item.productId !== undefined && item.productId !== "",
-    );
-
-    if (rawItems.length === 0) {
+    const lines = normaliseLines(body.items ?? []);
+    if (lines.length === 0) {
       return Response.json(
         { ok: false, error: "Add at least one pair to the order." },
         { status: 400 },
       );
     }
 
-    const productIds = rawItems
-      .map((item) => Number(item.productId))
-      .filter((id) => Number.isFinite(id));
-
+    const productIds = [...new Set(lines.map((line) => line.productId))];
     const found = await db
       .select()
       .from(products)
       .where(inArray(products.id, productIds));
-
     const byId = new Map(found.map((product) => [product.id, product]));
 
-    const items = rawItems
-      .map((item) => {
-        const product = byId.get(Number(item.productId));
-        if (!product) return null;
-        const quantity = Math.max(1, Math.round(Number(item.quantity) || 1));
-        return {
-          product,
-          // `size` bisa datang sebagai angka dari JSON; paksa ke string dulu
-          // supaya `.slice\` tidak melempar TypeError dan pesanan hilang.
-          size: String(item.size ?? "42").slice(0, 8),
-          quantity,
-        };
-      })
-      .filter((item): item is NonNullable<typeof item> => item !== null);
+    // Validasi ketersediaan SEBELUM menulis apa pun. Dulu pesanan 5 pasang
+    // saat stok 2 tetap tersimpan: shelf mentok di 0, lalu pembatalannya
+    // mengembalikan 5 pasang yang tidak pernah ada (stok hantu).
+    for (const line of lines) {
+      const product = byId.get(line.productId);
 
-    if (items.length === 0) {
-      return Response.json(
-        { ok: false, error: "Those pairs are no longer in the catalogue." },
-        { status: 400 },
-      );
+      if (!product) {
+        return Response.json(
+          { ok: false, error: "One of those pairs is no longer in the catalogue." },
+          { status: 400 },
+        );
+      }
+
+      const availability = resolveAvailability(product);
+
+      if (availability === "archive") {
+        return Response.json(
+          { ok: false, error: `${product.name} is archived — it can't be ordered.` },
+          { status: 409 },
+        );
+      }
+
+      if (availability === "sold_out") {
+        return Response.json(
+          {
+            ok: false,
+            error: `${product.name} is sold out. Restock it or take a made-to-order build instead.`,
+          },
+          { status: 409 },
+        );
+      }
+
+      if (availability === "ready" && line.quantity > product.stock) {
+        return Response.json(
+          {
+            ok: false,
+            error: `Only ${product.stock} × ${product.name} left on the shelf.`,
+          },
+          { status: 409 },
+        );
+      }
     }
+
+    const items = lines.map((line) => {
+      const product = byId.get(line.productId)!;
+      return { product, size: line.size, quantity: line.quantity };
+    });
 
     const total = items.reduce(
       (sum, item) => sum + item.product.priceIdr * item.quantity,
@@ -128,10 +179,14 @@ export async function POST(request: Request) {
       );
 
       for (const item of items) {
+        // Made-to-order tidak memakai shelf: hanya catat penjualannya.
+        const takesShelf = resolveAvailability(item.product) === "ready";
         await tx
           .update(products)
           .set({
-            stock: sql`greatest(${products.stock} - ${item.quantity}, 0)`,
+            ...(takesShelf
+              ? { stock: sql`greatest(${products.stock} - ${item.quantity}, 0)` }
+              : {}),
             unitsSold: sql`${products.unitsSold} + ${item.quantity}`,
           })
           .where(inArray(products.id, [item.product.id]));

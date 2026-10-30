@@ -1,9 +1,12 @@
+import type { Metadata } from "next";
 import { desc } from "drizzle-orm";
 import { db } from "@/db";
 import { leads } from "@/db/schema";
 import { ensureSeed } from "@/db/seed";
 import { isOwner } from "@/lib/auth";
 import { CrmHeader } from "@/components/crm/ui";
+
+export const metadata: Metadata = { title: "Leads" };
 import { LeadsBoard, type CrmLead } from "@/components/crm/leads-board";
 
 export const dynamic = "force-dynamic";

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Crest } from "@/components/brand";
+import { site } from "@/lib/site";
 
 export function CrmLogin() {
   const router = useRouter();
@@ -66,9 +67,9 @@ export function CrmLogin() {
           </p>
           <div className="mt-8 grid grid-cols-3 gap-4 border-t border-paper/15 pt-5">
             {[
-              ["1,294", "pairs logged"],
-              ["40+", "countries"],
-              ["7", "pairs / week"],
+              [String(site.founded), "est. in Bandung"],
+              ["Hand-welted", "on the bench"],
+              ["6–8 weeks", "made to order"],
             ].map(([value, label]) => (
               <div key={label}>
                 <p className="font-display text-xl text-paper">{value}</p>

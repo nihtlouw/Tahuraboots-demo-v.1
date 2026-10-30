@@ -2,9 +2,17 @@
 
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
-import { CHANNELS, ORDER_STATUSES, orderStatusMeta } from "@/lib/catalog";
+import { CHANNELS, ORDER_STATUSES, orderStatusMeta, resolveAvailability } from "@/lib/catalog";
 import { formatDate, formatIdr } from "@/lib/format";
 import { Avatar, ChannelBadge, OrderPill, Panel } from "@/components/crm/ui";
+import {
+  Banner,
+  ConfirmDialog,
+  Modal,
+  ModalHeader,
+  Toast,
+  useToast,
+} from "@/components/crm/overlay";
 import { csvStamp, downloadCsv } from "@/lib/csv";
 
 export type CrmOrderItem = {
@@ -45,6 +53,7 @@ type LineItem = { productId: string; size: string; quantity: number };
 type SortKey = "newest" | "oldest" | "total-desc" | "total-asc" | "customer";
 
 const PAGE_SIZE = 8;
+const MAX_QUANTITY = 20;
 
 const sortOptions: { id: SortKey; label: string }[] = [
   { id: "newest", label: "Newest first" },
@@ -53,6 +62,31 @@ const sortOptions: { id: SortKey; label: string }[] = [
   { id: "total-asc", label: "Total · low to high" },
   { id: "customer", label: "Customer A–Z" },
 ];
+
+const channelLabels: Record<string, string> = {
+  web: "Website",
+  whatsapp: "WhatsApp",
+  instagram: "Instagram",
+  studio: "Studio visit",
+};
+
+const emptyForm = {
+  customerName: "",
+  customerEmail: "",
+  customerPhone: "",
+  country: "Indonesia",
+  city: "Bandung",
+  channel: "web",
+  notes: "",
+};
+
+function firstSize(product: ProductOption | undefined) {
+  return product?.sizes.split(",")[0] ?? "42";
+}
+
+function pairsIn(order: CrmOrder) {
+  return order.items.reduce((sum, item) => sum + item.quantity, 0);
+}
 
 export function OrdersManager({
   initial,
@@ -69,26 +103,29 @@ export function OrdersManager({
   const [busy, setBusy] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
+  const [editing, setEditing] = useState<CrmOrder | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<CrmOrder | null>(null);
   const [saving, setSaving] = useState(false);
   const [sort, setSort] = useState<SortKey>("newest");
   const [page, setPage] = useState(1);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [bulkStatus, setBulkStatus] = useState<string>("paid");
   const [bulkBusy, setBulkBusy] = useState(false);
-  const [toast, setToast] = useState<string | null>(null);
-  const [form, setForm] = useState({
-    customerName: "",
-    customerEmail: "",
-    customerPhone: "",
-    country: "Indonesia",
-    city: "Bandung",
-    channel: "web",
-    notes: "",
+  const { toast, show: showToast, dismiss: dismissToast } = useToast();
+
+  const [form, setForm] = useState(emptyForm);
+
+  // Hanya pair yang benar-benar bisa dipesan (ready / made to order). Sold out
+  // dan arsip ditolak server, jadi jangan ditawarkan sebagai default.
+  const orderableOptions = productOptions.filter((option) => {
+    const availability = resolveAvailability(option);
+    return availability === "ready" || availability === "made_to_order";
   });
+
   const [lines, setLines] = useState<LineItem[]>([
     {
-      productId: productOptions[0] ? String(productOptions[0].id) : "",
-      size: productOptions[0]?.sizes.split(",")[0] ?? "42",
+      productId: orderableOptions[0] ? String(orderableOptions[0].id) : "",
+      size: firstSize(orderableOptions[0]),
       quantity: 1,
     },
   ]);
@@ -123,11 +160,20 @@ export function OrdersManager({
     return sorted;
   }, [orders, filter, query, sort]);
 
+  const filteredIds = useMemo(() => new Set(filtered.map((order) => order.id)), [filtered]);
+
+  // Pilihan hanya berlaku untuk baris yang benar-benar terlihat. Dulu baris yang
+  // disembunyikan filter tetap ikut berubah saat aksi massal dijalankan.
+  const selected = useMemo(
+    () => selectedIds.filter((id) => filteredIds.has(id)),
+    [selectedIds, filteredIds],
+  );
+
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
   const paged = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
   const pageIds = paged.map((order) => order.id);
-  const allPageSelected = pageIds.length > 0 && pageIds.every((id) => selectedIds.includes(id));
+  const allPageSelected = pageIds.length > 0 && pageIds.every((id) => selected.includes(id));
 
   function toggleRow(id: number) {
     setSelectedIds((current) =>
@@ -142,15 +188,21 @@ export function OrdersManager({
     });
   }
 
+  function changeFilter(next: string) {
+    setFilter(next);
+    setPage(1);
+    setSelectedIds([]);
+  }
+
   async function applyBulkStatus() {
-    if (selectedIds.length === 0) return;
+    if (selected.length === 0) return;
     setBulkBusy(true);
     setError(null);
     try {
       const response = await fetch("/api/crm/orders/bulk", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ids: selectedIds, status: bulkStatus }),
+        body: JSON.stringify({ ids: selected, status: bulkStatus }),
       });
       const data = (await response.json()) as {
         ok?: boolean;
@@ -165,8 +217,10 @@ export function OrdersManager({
           updatedIds.has(order.id) ? { ...order, status: bulkStatus } : order,
         ),
       );
-      setToast(
-        `${updatedIds.size} order${updatedIds.size === 1 ? "" : "s"} moved to ${orderStatusMeta[bulkStatus]?.label ?? bulkStatus}.`,
+      showToast(
+        `${updatedIds.size} order${updatedIds.size === 1 ? "" : "s"} moved to ${
+          orderStatusMeta[bulkStatus]?.label ?? bulkStatus
+        }.`,
       );
       setSelectedIds([]);
       router.refresh();
@@ -191,27 +245,27 @@ export function OrdersManager({
         channel: order.channel,
         status: order.status,
         totalIdr: order.totalIdr,
-        pairs: order.items.reduce((sum, item) => sum + item.quantity, 0),
+        pairs: pairsIn(order),
         notes: order.notes,
       })),
     );
-    if (!ok) setError("Tidak ada baris untuk diekspor.");
-    else setToast(`${filtered.length} order diekspor ke CSV.`);
+    if (!ok) setError("There is nothing to export in this view.");
+    else showToast(`${filtered.length} order${filtered.length === 1 ? "" : "s"} exported to CSV.`);
   }
 
   const total = lines.reduce((sum, line) => {
-    const product = productOptions.find(
-      (option) => String(option.id) === line.productId,
-    );
+    const product = productOptions.find((option) => String(option.id) === line.productId);
     return sum + (product?.priceIdr ?? 0) * Math.max(1, line.quantity || 1);
   }, 0);
 
   async function updateStatus(order: CrmOrder, status: string) {
+    const previous = order.status;
     setBusy(order.id);
     setError(null);
     setOrders((current) =>
       current.map((row) => (row.id === order.id ? { ...row, status } : row)),
     );
+
     try {
       const response = await fetch(`/api/crm/orders/${order.id}`, {
         method: "PATCH",
@@ -222,41 +276,59 @@ export function OrdersManager({
       if (!response.ok || !data.ok) {
         setError(data.error ?? "Could not update the order.");
         setOrders((current) =>
-          current.map((row) =>
-            row.id === order.id ? { ...row, status: order.status } : row,
-          ),
+          current.map((row) => (row.id === order.id ? { ...row, status: previous } : row)),
         );
         return;
+      }
+
+      if (status === "cancelled") {
+        showToast(`Order ${order.orderNumber} cancelled — ${pairsIn(order)} pair(s) returned to the shelf.`);
+      } else {
+        showToast(`Order ${order.orderNumber} moved to ${orderStatusMeta[status]?.label ?? status}.`);
       }
       router.refresh();
     } catch {
       setError("Network error — the order was not updated.");
+      setOrders((current) =>
+        current.map((row) => (row.id === order.id ? { ...row, status: previous } : row)),
+      );
     } finally {
       setBusy(null);
     }
   }
 
-  async function removeOrder(order: CrmOrder) {
-    if (!window.confirm(`Remove order ${order.orderNumber}? This cannot be undone.`)) {
-      return;
-    }
+  async function confirmRemove() {
+    if (!pendingDelete) return;
+    const order = pendingDelete;
     setBusy(order.id);
     try {
-      const response = await fetch(`/api/crm/orders/${order.id}`, {
-        method: "DELETE",
-      });
+      const response = await fetch(`/api/crm/orders/${order.id}`, { method: "DELETE" });
       const data = (await response.json()) as { ok?: boolean; error?: string };
       if (!response.ok || !data.ok) {
         setError(data.error ?? "Could not remove the order.");
         return;
       }
       setOrders((current) => current.filter((row) => row.id !== order.id));
+      setSelectedIds((current) => current.filter((id) => id !== order.id));
+      setPendingDelete(null);
+      showToast(`Order ${order.orderNumber} removed.`);
       router.refresh();
     } catch {
       setError("Network error — the order was not removed.");
     } finally {
       setBusy(null);
     }
+  }
+
+  function resetComposer() {
+    setForm(emptyForm);
+    setLines([
+      {
+        productId: orderableOptions[0] ? String(orderableOptions[0].id) : "",
+        size: firstSize(orderableOptions[0]),
+        quantity: 1,
+      },
+    ]);
   }
 
   async function createOrder(event: React.FormEvent<HTMLFormElement>) {
@@ -284,25 +356,48 @@ export function OrdersManager({
         return;
       }
       setCreating(false);
-      setForm({
-        customerName: "",
-        customerEmail: "",
-        customerPhone: "",
-        country: "Indonesia",
-        city: "Bandung",
-        channel: "web",
-        notes: "",
-      });
-      setLines([
-        {
-          productId: productOptions[0] ? String(productOptions[0].id) : "",
-          size: productOptions[0]?.sizes.split(",")[0] ?? "42",
-          quantity: 1,
-        },
-      ]);
+      resetComposer();
+      showToast("Order logged — stock on the shelf was updated.");
       router.refresh();
     } catch {
       setError("Network error — the order was not logged.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function saveDetails(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!editing) return;
+    setSaving(true);
+    setError(null);
+    try {
+      const response = await fetch(`/api/crm/orders/${editing.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          customerName: editing.customerName,
+          customerEmail: editing.customerEmail,
+          customerPhone: editing.customerPhone,
+          city: editing.city,
+          country: editing.country,
+          channel: editing.channel,
+          notes: editing.notes,
+        }),
+      });
+      const data = (await response.json()) as { ok?: boolean; error?: string };
+      if (!response.ok || !data.ok) {
+        setError(data.error ?? "Could not save the order.");
+        return;
+      }
+      setOrders((current) =>
+        current.map((row) => (row.id === editing.id ? { ...row, ...editing } : row)),
+      );
+      setEditing(null);
+      showToast("Order details updated.");
+      router.refresh();
+    } catch {
+      setError("Network error — the order was not saved.");
     } finally {
       setSaving(false);
     }
@@ -321,7 +416,8 @@ export function OrdersManager({
             <button
               key={tab.id}
               type="button"
-              onClick={() => setFilter(tab.id)}
+              onClick={() => changeFilter(tab.id)}
+              aria-pressed={filter === tab.id}
               className={`shrink-0 rounded-lg px-3 py-2 text-[0.65rem] font-medium transition-colors ${
                 filter === tab.id ? "bg-ink text-paper" : "text-[#7a7062] hover:bg-[#f4eee2]"
               }`}
@@ -339,8 +435,10 @@ export function OrdersManager({
             onChange={(event) => {
               setQuery(event.target.value);
               setPage(1);
+              setSelectedIds([]);
             }}
             placeholder="Search orders, customers…"
+            aria-label="Search orders"
             className="crm-input !w-full lg:!w-56"
           />
           <select
@@ -367,7 +465,10 @@ export function OrdersManager({
           </button>
           <button
             type="button"
-            onClick={() => setCreating(true)}
+            onClick={() => {
+              resetComposer();
+              setCreating(true);
+            }}
             className="shrink-0 rounded-lg bg-[#7a5a2e] px-3.5 py-2.5 text-[0.62rem] font-semibold uppercase tracking-[0.12em] text-white transition-colors hover:bg-[#5f451f]"
           >
             + New order
@@ -375,24 +476,13 @@ export function OrdersManager({
         </div>
       </div>
 
-      {error && (
-        <div className="flex items-center justify-between gap-3 rounded-lg border border-[#dfc0bb] bg-[#f1dedb] px-4 py-2.5 text-[0.76rem] text-[#88423a]">
-          {error}
-          <button type="button" onClick={() => setError(null)} className="font-semibold">✕</button>
-        </div>
-      )}
+      {error && <Banner onDismiss={() => setError(null)}>{error}</Banner>}
+      <Toast toast={toast} onDismiss={dismissToast} />
 
-      {toast && (
-        <div role="status" className="flex items-center justify-between gap-3 rounded-lg border border-[#cbd8bf] bg-[#eef3e6] px-4 py-2.5 text-[0.76rem] text-[#4c6034]">
-          {toast}
-          <button type="button" onClick={() => setToast(null)} className="font-semibold">✕</button>
-        </div>
-      )}
-
-      {selectedIds.length > 0 && (
+      {selected.length > 0 && (
         <div className="flex flex-wrap items-center gap-3 rounded-lg border border-[#d8c9ae] bg-[#faf6ee] px-4 py-2.5 text-[0.74rem] text-[#5f5548]">
           <strong className="font-semibold text-[#3c332a]">
-            {selectedIds.length} dipilih
+            {selected.length} selected
           </strong>
           <label className="flex items-center gap-2">
             <span className="text-[0.62rem] uppercase tracking-[0.12em] text-[#a19683]">Set status</span>
@@ -412,15 +502,18 @@ export function OrdersManager({
             disabled={bulkBusy}
             className="rounded-md bg-[#7a5a2e] px-3 py-1.5 text-[0.6rem] font-semibold uppercase tracking-[0.12em] text-white transition-colors hover:bg-[#5f451f] disabled:opacity-60"
           >
-            {bulkBusy ? "Menyimpan…" : "Terapkan"}
+            {bulkBusy ? "Saving…" : "Apply"}
           </button>
           <button
             type="button"
             onClick={() => setSelectedIds([])}
             className="text-[0.62rem] text-[#8b8173] underline-offset-4 hover:underline"
           >
-            Bersihkan pilihan
+            Clear selection
           </button>
+          <span className="text-[0.6rem] text-[#a19683]">
+            Cancelling returns pairs to the shelf automatically.
+          </span>
         </div>
       )}
 
@@ -428,14 +521,14 @@ export function OrdersManager({
         title="Order ledger"
         subtitle={`${filtered.length} orders in view · page ${currentPage}/${totalPages}`}
         action={
-          <label className="flex items-center gap-2 text-[0.62rem] text-[#8b8173]">
+          <label className="flex cursor-pointer items-center gap-2 text-[0.62rem] text-[#8b8173]">
             <input
               type="checkbox"
               checked={allPageSelected}
               onChange={togglePage}
               className="h-3.5 w-3.5 accent-[#7a5a2e]"
             />
-            Pilih halaman ini
+            Select this page
           </label>
         }
       >
@@ -447,9 +540,9 @@ export function OrdersManager({
                 <div className="grid grid-cols-[auto_1fr_auto] items-start gap-3 px-4 py-3 sm:grid-cols-[auto_1.1fr_1fr_auto_auto] sm:items-center">
                   <input
                     type="checkbox"
-                    checked={selectedIds.includes(order.id)}
+                    checked={selected.includes(order.id)}
                     onChange={() => toggleRow(order.id)}
-                    aria-label={`Pilih pesanan ${order.orderNumber}`}
+                    aria-label={`Select order ${order.orderNumber}`}
                     className="mt-1 h-3.5 w-3.5 accent-[#7a5a2e] sm:mt-0"
                   />
                   <div className="min-w-0">
@@ -465,14 +558,19 @@ export function OrdersManager({
                   </div>
                   <div className="text-right sm:min-w-[104px]">
                     <p className="text-[0.76rem] font-semibold text-[#221b15]">{formatIdr(order.totalIdr)}</p>
-                    <p className="text-[0.6rem] text-[#a19683]">{order.items.reduce((sum, item) => sum + item.quantity, 0)} pair(s)</p>
+                    <p className="text-[0.6rem] text-[#a19683]">{pairsIn(order)} pair(s)</p>
                   </div>
                   <div className="flex items-center justify-end gap-2">
                     <select
                       value={order.status}
-                      onChange={(event) => updateStatus(order, event.target.value)}
+                      onChange={(event) => {
+                        const next = event.target.value;
+                        if (next === order.status) return;
+                        void updateStatus(order, next);
+                      }}
                       disabled={busy === order.id}
-                      className="rounded-lg border border-crm-line bg-white px-2 py-1.5 text-[0.66rem] font-medium text-[#3c332a] outline-none focus:border-[#b08c52]"
+                      aria-label={`Status for ${order.orderNumber}`}
+                      className="rounded-lg border border-crm-line bg-white px-2 py-1.5 text-[0.66rem] font-medium text-[#3c332a] outline-none focus:border-[#b08c52] disabled:opacity-60"
                     >
                       {ORDER_STATUSES.map((status) => (
                         <option key={status} value={status}>{orderStatusMeta[status].label}</option>
@@ -482,6 +580,7 @@ export function OrdersManager({
                       type="button"
                       onClick={() => setExpanded(isOpen ? null : order.id)}
                       aria-label={isOpen ? "Collapse order" : "Expand order"}
+                      aria-expanded={isOpen}
                       className="flex h-8 w-8 items-center justify-center rounded-md border border-crm-line text-[0.7rem] text-[#7a7062] transition-colors hover:bg-[#f4eee2]"
                     >
                       {isOpen ? "−" : "+"}
@@ -514,7 +613,7 @@ export function OrdersManager({
                     <div className="space-y-2">
                       <p className="text-[0.56rem] font-semibold uppercase tracking-[0.16em] text-[#a19683]">Customer</p>
                       <div className="space-y-1 text-[0.7rem] text-[#5f5548]">
-                        <p>{order.customerEmail}</p>
+                        <p className="break-all">{order.customerEmail}</p>
                         <p>{order.customerPhone || "No phone on file"}</p>
                         <p>{order.city}, {order.country}</p>
                       </div>
@@ -522,24 +621,33 @@ export function OrdersManager({
                         <ChannelBadge channel={order.channel} />
                         <OrderPill status={order.status} />
                       </div>
-                      <div className="flex gap-2 pt-2">
+                      <div className="flex flex-wrap gap-2 pt-2">
+                        <button
+                          type="button"
+                          onClick={() => setEditing({ ...order })}
+                          className="rounded-md border border-crm-line bg-white px-2.5 py-1.5 text-[0.6rem] font-medium text-[#5f5548] hover:border-[#c6b699]"
+                        >
+                          Edit details
+                        </button>
                         <a
                           href={`mailto:${order.customerEmail}?subject=${encodeURIComponent(`Your Tahura order ${order.orderNumber}`)}`}
                           className="rounded-md border border-crm-line bg-white px-2.5 py-1.5 text-[0.6rem] font-medium text-[#5f5548] hover:border-[#c6b699]"
                         >
                           Email customer
                         </a>
-                        <a
-                          href={`https://wa.me/${order.customerPhone.replace(/[^0-9]/g, "")}`}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="rounded-md border border-crm-line bg-white px-2.5 py-1.5 text-[0.6rem] font-medium text-[#5f5548] hover:border-[#c6b699]"
-                        >
-                          WhatsApp
-                        </a>
+                        {order.customerPhone.replace(/\D/g, "") && (
+                          <a
+                            href={`https://wa.me/${order.customerPhone.replace(/[^0-9]/g, "")}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="rounded-md border border-crm-line bg-white px-2.5 py-1.5 text-[0.6rem] font-medium text-[#5f5548] hover:border-[#c6b699]"
+                          >
+                            WhatsApp
+                          </a>
+                        )}
                         <button
                           type="button"
-                          onClick={() => removeOrder(order)}
+                          onClick={() => setPendingDelete(order)}
                           disabled={busy === order.id}
                           className="rounded-md border border-transparent px-2 py-1.5 text-[0.6rem] text-[#a19683] hover:border-[#dfc0bb] hover:bg-[#f1dedb] hover:text-[#88423a]"
                         >
@@ -553,6 +661,7 @@ export function OrdersManager({
             );
           })}
         </ul>
+
         {filtered.length === 0 && (
           <div className="px-6 py-14 text-center">
             <p className="font-display text-lg text-[#3c332a]">No orders in this view.</p>
@@ -563,14 +672,15 @@ export function OrdersManager({
         {totalPages > 1 && (
           <div className="flex items-center justify-between gap-3 border-t border-crm-line px-4 py-3 text-[0.66rem] text-[#8b8173]">
             <span>
-              Menampilkan {(currentPage - 1) * PAGE_SIZE + 1}–
-              {Math.min(currentPage * PAGE_SIZE, filtered.length)} dari {filtered.length}
+              Showing {(currentPage - 1) * PAGE_SIZE + 1}–
+              {Math.min(currentPage * PAGE_SIZE, filtered.length)} of {filtered.length}
             </span>
             <div className="flex items-center gap-1.5">
               <button
                 type="button"
                 onClick={() => setPage(Math.max(1, currentPage - 1))}
                 disabled={currentPage === 1}
+                aria-label="Previous page"
                 className="rounded-md border border-crm-line bg-white px-2.5 py-1.5 disabled:opacity-40"
               >
                 ←
@@ -582,6 +692,7 @@ export function OrdersManager({
                 type="button"
                 onClick={() => setPage(Math.min(totalPages, currentPage + 1))}
                 disabled={currentPage === totalPages}
+                aria-label="Next page"
                 className="rounded-md border border-crm-line bg-white px-2.5 py-1.5 disabled:opacity-40"
               >
                 →
@@ -591,93 +702,141 @@ export function OrdersManager({
         )}
       </Panel>
 
-      {creating && (
-        <div className="fixed inset-0 z-[60] flex items-start justify-center overflow-y-auto bg-ink/50 p-4 backdrop-blur-sm sm:items-center">
-          <form onSubmit={createOrder} className="w-full max-w-2xl rounded-xl border border-crm-line bg-white shadow-xl">
-            <div className="flex items-start justify-between border-b border-crm-line px-5 py-4">
-              <div>
-                <p className="text-[0.58rem] font-semibold uppercase tracking-[0.16em] text-[#a8865a]">Order entry</p>
-                <h2 className="mt-1 font-display text-xl text-[#221b15]">Log a new order</h2>
-              </div>
-              <button type="button" onClick={() => setCreating(false)} className="text-[#a19683] hover:text-[#221b15]">✕</button>
+      {/* ── Order entry ─────────────────────────────────────────────── */}
+      <Modal open={creating} onClose={() => setCreating(false)} labelledBy="order-entry-title">
+        <form onSubmit={createOrder}>
+          <ModalHeader
+            id="order-entry-title"
+            eyebrow="Order entry"
+            title="Log a new order"
+            onClose={() => setCreating(false)}
+          />
+
+          <div className="grid gap-3 px-5 py-4 sm:grid-cols-2">
+            <div>
+              <label className="crm-label" htmlFor="order-name">Customer name</label>
+              <input id="order-name" required value={form.customerName} onChange={(event) => setForm({ ...form, customerName: event.target.value })} className="crm-input" placeholder="Raka Pradipta" />
+            </div>
+            <div>
+              <label className="crm-label" htmlFor="order-email">Email</label>
+              <input id="order-email" required type="email" value={form.customerEmail} onChange={(event) => setForm({ ...form, customerEmail: event.target.value })} className="crm-input" placeholder="raka@email.com" />
+            </div>
+            <div>
+              <label className="crm-label" htmlFor="order-phone">Phone / WhatsApp</label>
+              <input id="order-phone" value={form.customerPhone} onChange={(event) => setForm({ ...form, customerPhone: event.target.value })} className="crm-input" placeholder="+62 812 …" />
+            </div>
+            <div>
+              <label className="crm-label" htmlFor="order-channel">Channel</label>
+              <select id="order-channel" value={form.channel} onChange={(event) => setForm({ ...form, channel: event.target.value })} className="crm-input">
+                {CHANNELS.map((channel) => (
+                  <option key={channel} value={channel}>{channelLabels[channel]}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="crm-label" htmlFor="order-city">City</label>
+              <input id="order-city" value={form.city} onChange={(event) => setForm({ ...form, city: event.target.value })} className="crm-input" />
+            </div>
+            <div>
+              <label className="crm-label" htmlFor="order-country">Country</label>
+              <input id="order-country" value={form.country} onChange={(event) => setForm({ ...form, country: event.target.value })} className="crm-input" />
             </div>
 
-            <div className="grid gap-3 px-5 py-4 sm:grid-cols-2">
-              <div>
-                <label className="crm-label">Customer name</label>
-                <input required value={form.customerName} onChange={(event) => setForm({ ...form, customerName: event.target.value })} className="crm-input" placeholder="Raka Pradipta" />
-              </div>
-              <div>
-                <label className="crm-label">Email</label>
-                <input required type="email" value={form.customerEmail} onChange={(event) => setForm({ ...form, customerEmail: event.target.value })} className="crm-input" placeholder="raka@email.com" />
-              </div>
-              <div>
-                <label className="crm-label">Phone / WhatsApp</label>
-                <input value={form.customerPhone} onChange={(event) => setForm({ ...form, customerPhone: event.target.value })} className="crm-input" placeholder="+62 812 …" />
-              </div>
-              <div>
-                <label className="crm-label">Channel</label>
-                <select value={form.channel} onChange={(event) => setForm({ ...form, channel: event.target.value })} className="crm-input">
-                  {CHANNELS.map((channel) => (
-                    <option key={channel} value={channel}>
-                      {channel === "web" ? "Website" : channel === "whatsapp" ? "WhatsApp" : channel === "studio" ? "Studio visit" : "Instagram"}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="crm-label">City</label>
-                <input value={form.city} onChange={(event) => setForm({ ...form, city: event.target.value })} className="crm-input" />
-              </div>
-              <div>
-                <label className="crm-label">Country</label>
-                <input value={form.country} onChange={(event) => setForm({ ...form, country: event.target.value })} className="crm-input" />
+            <div className="sm:col-span-2">
+              <div className="flex items-center justify-between">
+                <label className="crm-label !mb-0">Pairs</label>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setLines((current) => [
+                      ...current,
+                      {
+                        productId: orderableOptions[0] ? String(orderableOptions[0].id) : "",
+                        size: firstSize(orderableOptions[0]),
+                        quantity: 1,
+                      },
+                    ])
+                  }
+                  className="text-[0.6rem] font-semibold uppercase tracking-[0.12em] text-[#8a6a3c] hover:text-[#221b15]"
+                >
+                  + Add another pair
+                </button>
               </div>
 
-              <div className="sm:col-span-2">
-                <div className="flex items-center justify-between">
-                  <label className="crm-label !mb-0">Pairs</label>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setLines((current) => [
-                        ...current,
-                        {
-                          productId: productOptions[0] ? String(productOptions[0].id) : "",
-                          size: productOptions[0]?.sizes.split(",")[0] ?? "42",
-                          quantity: 1,
-                        },
-                      ])
-                    }
-                    className="text-[0.6rem] font-semibold uppercase tracking-[0.12em] text-[#8a6a3c] hover:text-[#221b15]"
-                  >
-                    + Add another pair
-                  </button>
-                </div>
-                <div className="mt-2 space-y-2">
-                  {lines.map((line, index) => {
-                    const selected = productOptions.find((option) => String(option.id) === line.productId);
-                    return (
-                      <div key={index} className="grid grid-cols-[1fr_auto_auto_auto] gap-2 rounded-lg border border-crm-line bg-[#fdfbf7] p-2">
+              <div className="mt-2 space-y-2">
+                {lines.map((line, index) => {
+                  const selectedProduct = productOptions.find(
+                    (option) => String(option.id) === line.productId,
+                  );
+                  const availability = selectedProduct
+                    ? resolveAvailability(selectedProduct)
+                    : "sold_out";
+                  const maxQuantity =
+                    availability === "ready"
+                      ? Math.max(1, selectedProduct?.stock ?? 1)
+                      : MAX_QUANTITY;
+
+                  return (
+                    <div
+                      key={index}
+                      className="rounded-lg border border-crm-line bg-[#fdfbf7] p-2"
+                    >
+                      <div className="flex flex-col gap-2 sm:grid sm:grid-cols-[minmax(0,1fr)_5.5rem_4.5rem_2rem] sm:items-center">
                         <select
                           value={line.productId}
-                          onChange={(event) =>
+                          aria-label="Pair"
+                          onChange={(event) => {
+                            const nextProduct = productOptions.find(
+                              (option) => String(option.id) === event.target.value,
+                            );
+                            const nextAvailability = nextProduct
+                              ? resolveAvailability(nextProduct)
+                              : "sold_out";
                             setLines((current) =>
                               current.map((row, rowIndex) =>
-                                rowIndex === index ? { ...row, productId: event.target.value } : row,
+                                rowIndex === index
+                                  ? {
+                                      ...row,
+                                      productId: event.target.value,
+                                      size: firstSize(nextProduct),
+                                      quantity:
+                                        nextAvailability === "ready"
+                                          ? 1
+                                          : Math.min(row.quantity, MAX_QUANTITY),
+                                    }
+                                  : row,
                               ),
-                            )
-                          }
+                            );
+                          }}
                           className="crm-input !bg-white"
                         >
-                          {productOptions.map((option) => (
-                            <option key={option.id} value={option.id}>
-                              {option.name} — {formatIdr(option.priceIdr)} ({option.stock} left)
-                            </option>
-                          ))}
+                          {productOptions.map((option) => {
+                            const optionAvailability = resolveAvailability(option);
+                            const unavailable =
+                              optionAvailability === "archive" ||
+                              optionAvailability === "sold_out";
+                            return (
+                              <option
+                                key={option.id}
+                                value={option.id}
+                                disabled={unavailable}
+                              >
+                                {option.name} — {formatIdr(option.priceIdr)}
+                                {optionAvailability === "ready"
+                                  ? ` (${option.stock} left)`
+                                  : optionAvailability === "made_to_order"
+                                    ? " (made to order)"
+                                    : optionAvailability === "sold_out"
+                                      ? " (sold out)"
+                                      : " (archived)"}
+                              </option>
+                            );
+                          })}
                         </select>
+
                         <select
                           value={line.size}
+                          aria-label="Size"
                           onChange={(event) =>
                             setLines((current) =>
                               current.map((row, rowIndex) =>
@@ -685,64 +844,175 @@ export function OrdersManager({
                               ),
                             )
                           }
-                          className="crm-input !w-20 !bg-white"
+                          className="crm-input !bg-white"
                         >
-                          {(selected?.sizes.split(",") ?? ["42"]).map((size) => (
+                          {(selectedProduct?.sizes.split(",") ?? ["42"]).map((size) => (
                             <option key={size} value={size}>EU {size}</option>
                           ))}
                         </select>
+
                         <input
                           type="number"
                           min={1}
+                          max={maxQuantity}
                           value={line.quantity}
-                          onChange={(event) =>
+                          aria-label="Quantity"
+                          onChange={(event) => {
+                            const next = Number(event.target.value);
                             setLines((current) =>
                               current.map((row, rowIndex) =>
-                                rowIndex === index ? { ...row, quantity: Number(event.target.value) } : row,
+                                rowIndex === index
+                                  ? { ...row, quantity: Number.isFinite(next) ? next : 1 }
+                                  : row,
+                              ),
+                            );
+                          }}
+                          onBlur={() =>
+                            setLines((current) =>
+                              current.map((row, rowIndex) =>
+                                rowIndex === index
+                                  ? {
+                                      ...row,
+                                      quantity: Math.min(
+                                        maxQuantity,
+                                        Math.max(1, Math.round(row.quantity) || 1),
+                                      ),
+                                    }
+                                  : row,
                               ),
                             )
                           }
-                          aria-label="Quantity"
-                          className="crm-input !w-16 !bg-white"
+                          className="crm-input !bg-white"
                         />
+
                         <button
                           type="button"
                           onClick={() => setLines((current) => current.filter((_, rowIndex) => rowIndex !== index))}
                           disabled={lines.length === 1}
-                          className="rounded-md px-2 text-[0.8rem] text-[#a19683] hover:text-[#88423a] disabled:opacity-30"
+                          className="justify-self-end rounded-md px-2 py-1 text-[0.8rem] text-[#a19683] hover:text-[#88423a] disabled:opacity-30"
                           aria-label="Remove pair"
                         >
                           ✕
                         </button>
                       </div>
-                    );
-                  })}
-                </div>
-              </div>
 
-              <div className="sm:col-span-2">
-                <label className="crm-label">Studio notes</label>
-                <textarea rows={2} value={form.notes} onChange={(event) => setForm({ ...form, notes: event.target.value })} className="crm-input resize-none" placeholder="Fitting notes, shipping preference, monogram…" />
+                      <div className="mt-1.5 flex items-center justify-between text-[0.6rem]">
+                        <span className="text-[#a19683]">
+                          {availability === "ready" && selectedProduct
+                            ? `${selectedProduct.stock} pair(s) on the shelf`
+                            : availability === "made_to_order"
+                              ? "Made to order — 6–8 weeks, no shelf stock"
+                              : "Not available to order"}
+                        </span>
+                        <span className="font-medium text-[#5f5548]">
+                          {formatIdr((selectedProduct?.priceIdr ?? 0) * Math.max(1, line.quantity || 1))}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
 
-            <div className="flex flex-col gap-3 border-t border-crm-line px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="sm:col-span-2">
+              <label className="crm-label" htmlFor="order-notes">Studio notes</label>
+              <textarea id="order-notes" rows={2} value={form.notes} onChange={(event) => setForm({ ...form, notes: event.target.value })} className="crm-input resize-none" placeholder="Fitting notes, shipping preference, monogram…" />
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-3 border-t border-crm-line px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-[0.56rem] font-semibold uppercase tracking-[0.14em] text-[#a19683]">Order total</p>
+              <p className="font-display text-xl text-[#221b15]">{formatIdr(total)}</p>
+            </div>
+            <div className="flex gap-2">
+              <button type="button" onClick={() => setCreating(false)} className="rounded-lg border border-crm-line px-4 py-2.5 text-[0.62rem] font-semibold uppercase tracking-[0.12em] text-[#7a7062]">
+                Cancel
+              </button>
+              <button type="submit" disabled={saving || orderableOptions.length === 0} className="rounded-lg bg-ink px-4 py-2.5 text-[0.62rem] font-semibold uppercase tracking-[0.12em] text-paper transition-colors hover:bg-ink-3 disabled:opacity-60">
+                {saving ? "Logging…" : "Log order"}
+              </button>
+            </div>
+          </div>
+        </form>
+      </Modal>
+
+      {/* ── Edit details ────────────────────────────────────────────── */}
+      <Modal open={Boolean(editing)} onClose={() => setEditing(null)} labelledBy="order-edit-title">
+        {editing && (
+          <form onSubmit={saveDetails}>
+            <ModalHeader
+              id="order-edit-title"
+              eyebrow={`Order ${editing.orderNumber}`}
+              title="Edit customer details"
+              onClose={() => setEditing(null)}
+            />
+
+            <div className="grid gap-3 px-5 py-4 sm:grid-cols-2">
               <div>
-                <p className="text-[0.56rem] font-semibold uppercase tracking-[0.14em] text-[#a19683]">Order total</p>
-                <p className="font-display text-xl text-[#221b15]">{formatIdr(total)}</p>
+                <label className="crm-label" htmlFor="edit-name">Customer name</label>
+                <input id="edit-name" required value={editing.customerName} onChange={(event) => setEditing({ ...editing, customerName: event.target.value })} className="crm-input" />
               </div>
-              <div className="flex gap-2">
-                <button type="button" onClick={() => setCreating(false)} className="rounded-lg border border-crm-line px-4 py-2.5 text-[0.62rem] font-semibold uppercase tracking-[0.12em] text-[#7a7062]">
-                  Cancel
-                </button>
-                <button type="submit" disabled={saving || productOptions.length === 0} className="rounded-lg bg-ink px-4 py-2.5 text-[0.62rem] font-semibold uppercase tracking-[0.12em] text-paper transition-colors hover:bg-ink-3 disabled:opacity-60">
-                  {saving ? "Logging…" : "Log order"}
-                </button>
+              <div>
+                <label className="crm-label" htmlFor="edit-email">Email</label>
+                <input id="edit-email" required type="email" value={editing.customerEmail} onChange={(event) => setEditing({ ...editing, customerEmail: event.target.value })} className="crm-input" />
               </div>
+              <div>
+                <label className="crm-label" htmlFor="edit-phone">Phone / WhatsApp</label>
+                <input id="edit-phone" value={editing.customerPhone} onChange={(event) => setEditing({ ...editing, customerPhone: event.target.value })} className="crm-input" />
+              </div>
+              <div>
+                <label className="crm-label" htmlFor="edit-channel">Channel</label>
+                <select id="edit-channel" value={editing.channel} onChange={(event) => setEditing({ ...editing, channel: event.target.value })} className="crm-input">
+                  {CHANNELS.map((channel) => (
+                    <option key={channel} value={channel}>{channelLabels[channel]}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="crm-label" htmlFor="edit-city">City</label>
+                <input id="edit-city" value={editing.city} onChange={(event) => setEditing({ ...editing, city: event.target.value })} className="crm-input" />
+              </div>
+              <div>
+                <label className="crm-label" htmlFor="edit-country">Country</label>
+                <input id="edit-country" value={editing.country} onChange={(event) => setEditing({ ...editing, country: event.target.value })} className="crm-input" />
+              </div>
+              <div className="sm:col-span-2">
+                <label className="crm-label" htmlFor="edit-notes">Studio notes</label>
+                <textarea id="edit-notes" rows={3} value={editing.notes} onChange={(event) => setEditing({ ...editing, notes: event.target.value })} className="crm-input resize-none" />
+              </div>
+              <p className="text-[0.62rem] text-[#a19683] sm:col-span-2">
+                Pairs, prices and totals can&apos;t be changed here — delete the order and log it again if the pairs are wrong.
+              </p>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 border-t border-crm-line px-5 py-4">
+              <button type="button" onClick={() => setEditing(null)} className="rounded-lg border border-crm-line px-4 py-2.5 text-[0.62rem] font-semibold uppercase tracking-[0.12em] text-[#7a7062]">
+                Cancel
+              </button>
+              <button type="submit" disabled={saving} className="rounded-lg bg-ink px-4 py-2.5 text-[0.62rem] font-semibold uppercase tracking-[0.12em] text-paper transition-colors hover:bg-ink-3 disabled:opacity-60">
+                {saving ? "Saving…" : "Save changes"}
+              </button>
             </div>
           </form>
-        </div>
-      )}
+        )}
+      </Modal>
+
+      <ConfirmDialog
+        open={Boolean(pendingDelete)}
+        title={`Delete ${pendingDelete?.orderNumber ?? "this order"}?`}
+        message={
+          <>
+            This removes the order from the ledger. If it is still active, its{" "}
+            {pendingDelete ? pairsIn(pendingDelete) : 0} pair(s) go back to the shelf.
+            This cannot be undone.
+          </>
+        }
+        confirmLabel="Delete order"
+        busy={busy === pendingDelete?.id}
+        onConfirm={confirmRemove}
+        onCancel={() => setPendingDelete(null)}
+      />
     </div>
   );
 }

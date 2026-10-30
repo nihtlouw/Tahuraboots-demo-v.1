@@ -5,6 +5,14 @@ import { useMemo, useState } from "react";
 import { LEAD_STATUSES, leadStatusMeta } from "@/lib/catalog";
 import { formatIdr, timeAgo } from "@/lib/format";
 import { LeadPill } from "@/components/crm/ui";
+import {
+  Banner,
+  ConfirmDialog,
+  Modal,
+  ModalHeader,
+  Toast,
+  useToast,
+} from "@/components/crm/overlay";
 import { csvStamp, downloadCsv } from "@/lib/csv";
 
 export type CrmLead = {
@@ -22,16 +30,42 @@ export type CrmLead = {
   createdAt: string;
 };
 
+const sourceLabels: Record<string, string> = {
+  configurator: "Configurator build",
+  contact: "Studio enquiry",
+  studio: "Manual entry",
+  whatsapp: "WhatsApp",
+  instagram: "Instagram",
+};
+
+function sourceLabel(source: string) {
+  return sourceLabels[source] ?? source;
+}
+
+const emptyDraft = {
+  name: "",
+  email: "",
+  phone: "",
+  country: "Indonesia",
+  productInterest: "",
+  message: "",
+  source: "studio",
+  valueIdr: "",
+};
+
 export function LeadsBoard({ initial }: { initial: CrmLead[] }) {
   const router = useRouter();
   const [leads, setLeads] = useState(initial);
   const [busy, setBusy] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<CrmLead | null>(null);
-  const [notes, setNotes] = useState("");
-  const [savingNotes, setSavingNotes] = useState(false);
+  const [savingCard, setSavingCard] = useState(false);
   const [query, setQuery] = useState("");
-  const [toast, setToast] = useState<string | null>(null);
+  const [creating, setCreating] = useState(false);
+  const [savingNew, setSavingNew] = useState(false);
+  const [draft, setDraft] = useState(emptyDraft);
+  const [pendingDelete, setPendingDelete] = useState<CrmLead | null>(null);
+  const { toast, show: showToast, dismiss: dismissToast } = useToast();
   const [syncedInitial, setSyncedInitial] = useState(initial);
   const [weekAgo] = useState(() => Date.now() - 7 * 24 * 60 * 60 * 1000);
 
@@ -54,16 +88,15 @@ export function LeadsBoard({ initial }: { initial: CrmLead[] }) {
       const data = (await response.json()) as { ok?: boolean; error?: string; lead?: CrmLead };
       if (!response.ok || !data.ok || !data.lead) {
         setError(data.error ?? "Could not update the lead.");
-        return false;
+        return null;
       }
-      setLeads((current) =>
-        current.map((lead) => (lead.id === id ? { ...lead, ...data.lead } : lead)),
-      );
+      const updated = data.lead;
+      setLeads((current) => current.map((lead) => (lead.id === id ? { ...lead, ...updated } : lead)));
       router.refresh();
-      return true;
+      return updated;
     } catch {
       setError("Network error — the lead was not updated.");
-      return false;
+      return null;
     } finally {
       setBusy(null);
     }
@@ -77,14 +110,71 @@ export function LeadsBoard({ initial }: { initial: CrmLead[] }) {
     }
   }
 
-  async function saveNotes() {
+  async function saveCard() {
     if (!selected) return;
-    setSavingNotes(true);
-    const ok = await patch(selected.id, { notes });
-    setSavingNotes(false);
-    if (ok) {
+    setSavingCard(true);
+    const updated = await patch(selected.id, {
+      status: selected.status,
+      notes: selected.notes,
+      valueIdr: selected.valueIdr,
+      productInterest: selected.productInterest,
+    });
+    setSavingCard(false);
+    if (updated) {
       setSelected(null);
-      setNotes("");
+      showToast("Lead updated.");
+    }
+  }
+
+  async function createLead(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setSavingNew(true);
+    setError(null);
+    try {
+      const response = await fetch("/api/crm/leads", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...draft,
+          valueIdr: Number(draft.valueIdr) || 0,
+        }),
+      });
+      const data = (await response.json()) as { ok?: boolean; error?: string };
+      if (!response.ok || !data.ok) {
+        setError(data.error ?? "Could not add the lead.");
+        return;
+      }
+      setCreating(false);
+      setDraft(emptyDraft);
+      showToast("Lead added to the pipeline.");
+      router.refresh();
+    } catch {
+      setError("Network error — the lead was not added.");
+    } finally {
+      setSavingNew(false);
+    }
+  }
+
+  async function confirmDelete() {
+    if (!pendingDelete) return;
+    const lead = pendingDelete;
+    setBusy(lead.id);
+    try {
+      const response = await fetch(`/api/crm/leads/${lead.id}`, { method: "DELETE" });
+      const data = (await response.json()) as { ok?: boolean; error?: string };
+      if (!response.ok || !data.ok) {
+        setError(data.error ?? "Could not remove the lead.");
+        return;
+      }
+      setLeads((current) => current.filter((row) => row.id !== lead.id));
+      setPendingDelete(null);
+      setSelected(null);
+      showToast(`Lead ${lead.name} removed.`);
+      router.refresh();
+    } catch {
+      setError("Network error — the lead was not removed.");
+    } finally {
+      setBusy(null);
     }
   }
 
@@ -125,24 +215,20 @@ export function LeadsBoard({ initial }: { initial: CrmLead[] }) {
         ))}
       </div>
 
-      {error && (
-        <div className="flex items-center justify-between gap-3 rounded-lg border border-[#dfc0bb] bg-[#f1dedb] px-4 py-2.5 text-[0.76rem] text-[#88423a]">
-          {error}
-          <button type="button" onClick={() => setError(null)} className="font-semibold">✕</button>
-        </div>
-      )}
+      {error && <Banner onDismiss={() => setError(null)}>{error}</Banner>}
+      <Toast toast={toast} onDismiss={dismissToast} />
 
       <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-crm-line bg-white px-3 py-2.5">
         <input
           value={query}
           onChange={(event) => setQuery(event.target.value)}
-          placeholder="Cari nama, email, produk…"
+          placeholder="Search name, email, pair…"
           className="crm-input !w-full sm:!w-64"
-          aria-label="Cari leads"
+          aria-label="Search leads"
         />
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <span className="text-[0.62rem] text-[#8b8173]">
-            {visibleLeads.length} dari {leads.length} leads
+            {visibleLeads.length} of {leads.length} leads
           </span>
           <button
             type="button"
@@ -162,21 +248,25 @@ export function LeadsBoard({ initial }: { initial: CrmLead[] }) {
                   createdAt: new Date(lead.createdAt).toISOString(),
                 })),
               );
-              setToast(ok ? `${visibleLeads.length} leads diekspor ke CSV.` : "Tidak ada baris untuk diekspor.");
+              if (ok) showToast(`${visibleLeads.length} leads exported to CSV.`);
+              else setError("There is nothing to export in this view.");
             }}
             className="rounded-lg border border-crm-line bg-white px-3 py-2 text-[0.62rem] font-semibold uppercase tracking-[0.12em] text-[#5f5548] transition-colors hover:border-[#c6b699]"
           >
             Export CSV
           </button>
+          <button
+            type="button"
+            onClick={() => {
+              setDraft(emptyDraft);
+              setCreating(true);
+            }}
+            className="rounded-lg bg-[#7a5a2e] px-3.5 py-2 text-[0.62rem] font-semibold uppercase tracking-[0.12em] text-white transition-colors hover:bg-[#5f451f]"
+          >
+            + New lead
+          </button>
         </div>
       </div>
-
-      {toast && (
-        <div role="status" className="flex items-center justify-between gap-3 rounded-lg border border-[#cbd8bf] bg-[#eef3e6] px-4 py-2.5 text-[0.76rem] text-[#4c6034]">
-          {toast}
-          <button type="button" onClick={() => setToast(null)} className="font-semibold">✕</button>
-        </div>
-      )}
 
       <div className="hide-scrollbar grid gap-3 overflow-x-auto pb-2 md:grid-cols-2 xl:grid-cols-5">
         {LEAD_STATUSES.map((stage) => {
@@ -205,7 +295,7 @@ export function LeadsBoard({ initial }: { initial: CrmLead[] }) {
                         <div className="min-w-0">
                           <p className="truncate text-[0.76rem] font-semibold text-[#221b15]">{lead.name}</p>
                           <p className="text-[0.6rem] text-[#a19683]">
-                            {lead.country} · {lead.source === "configurator" ? "Build" : lead.source === "contact" ? "Enquiry" : lead.source}
+                            {lead.country} · {sourceLabel(lead.source)}
                           </p>
                         </div>
                         <span className="shrink-0 text-[0.55rem] uppercase tracking-[0.1em] text-[#c0b6a5]">
@@ -234,7 +324,7 @@ export function LeadsBoard({ initial }: { initial: CrmLead[] }) {
                             type="button"
                             disabled={stageIndex === 0 || busy === lead.id}
                             onClick={() => move(lead, -1)}
-                            aria-label="Move lead back a stage"
+                            aria-label={`Move ${lead.name} back a stage`}
                             className="flex h-6 w-6 items-center justify-center rounded border border-crm-line text-[0.6rem] text-[#a19683] hover:bg-[#f4eee2] disabled:opacity-30"
                           >
                             ←
@@ -243,7 +333,7 @@ export function LeadsBoard({ initial }: { initial: CrmLead[] }) {
                             type="button"
                             disabled={stageIndex === LEAD_STATUSES.length - 1 || busy === lead.id}
                             onClick={() => move(lead, 1)}
-                            aria-label="Move lead forward a stage"
+                            aria-label={`Move ${lead.name} forward a stage`}
                             className="flex h-6 w-6 items-center justify-center rounded border border-crm-line text-[0.6rem] text-[#a19683] hover:bg-[#f4eee2] disabled:opacity-30"
                           >
                             →
@@ -251,10 +341,7 @@ export function LeadsBoard({ initial }: { initial: CrmLead[] }) {
                         </div>
                         <button
                           type="button"
-                          onClick={() => {
-                            setSelected(lead);
-                            setNotes(lead.notes);
-                          }}
+                          onClick={() => setSelected({ ...lead })}
                           className="rounded border border-crm-line px-2 py-1 text-[0.58rem] font-medium text-[#5f5548] hover:border-[#c6b699] hover:bg-[#faf6ee]"
                         >
                           Open card
@@ -274,43 +361,33 @@ export function LeadsBoard({ initial }: { initial: CrmLead[] }) {
         })}
       </div>
 
-      {selected && (
-        <div className="fixed inset-0 z-[60] flex items-start justify-center overflow-y-auto bg-ink/50 p-4 backdrop-blur-sm sm:items-center">
-          <div className="w-full max-w-lg rounded-xl border border-crm-line bg-white shadow-xl">
-            <div className="flex items-start justify-between border-b border-crm-line px-5 py-4">
-              <div>
-                <div className="flex items-center gap-2">
-                  <LeadPill status={selected.status} />
-                  <span className="text-[0.58rem] uppercase tracking-[0.12em] text-[#a19683]">
-                    {selected.source === "configurator" ? "Configurator build" : "Studio enquiry"}
-                  </span>
-                </div>
-                <h2 className="mt-2 font-display text-xl text-[#221b15]">{selected.name}</h2>
-                <p className="text-[0.7rem] text-[#8b8173]">
-                  {selected.country} · {timeAgo(selected.createdAt)} ago
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setSelected(null)}
-                className="text-[#a19683] hover:text-[#221b15]"
-              >
-                ✕
-              </button>
-            </div>
+      {/* ── Lead card ───────────────────────────────────────────────── */}
+      <Modal open={Boolean(selected)} onClose={() => setSelected(null)} width="max-w-lg" labelledBy="lead-card-title">
+        {selected && (
+          <>
+            <ModalHeader
+              id="lead-card-title"
+              eyebrow={sourceLabel(selected.source)}
+              title={selected.name}
+              onClose={() => setSelected(null)}
+            />
 
             <div className="space-y-3 px-5 py-4">
-              <div>
-                <p className="crm-label">Interest</p>
-                <p className="text-[0.8rem] text-[#3c332a]">{selected.productInterest}</p>
+              <div className="flex flex-wrap items-center gap-2">
+                <LeadPill status={selected.status} />
+                <span className="text-[0.62rem] text-[#8b8173]">
+                  {selected.country} · {timeAgo(selected.createdAt)}
+                </span>
               </div>
+
               <div>
                 <p className="crm-label">Message</p>
                 <p className="rounded-lg bg-[#faf7f1] px-3 py-2.5 text-[0.76rem] leading-relaxed text-[#5f5548]">
                   {selected.message || "No message left."}
                 </p>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+
+              <div className="grid gap-3 sm:grid-cols-2">
                 <div>
                   <p className="crm-label">Email</p>
                   <a href={`mailto:${selected.email}`} className="break-all text-[0.74rem] text-[#7a5a2e] underline decoration-current/30 underline-offset-2">
@@ -322,20 +399,20 @@ export function LeadsBoard({ initial }: { initial: CrmLead[] }) {
                   <p className="text-[0.74rem] text-[#5f5548]">{selected.phone || "—"}</p>
                 </div>
                 <div>
-                  <p className="crm-label">Deal value</p>
-                  <p className="text-[0.8rem] font-semibold text-[#221b15]">
-                    {selected.valueIdr > 0 ? formatIdr(selected.valueIdr) : "Not quoted"}
-                  </p>
+                  <label className="crm-label" htmlFor="lead-interest">Pair of interest</label>
+                  <input
+                    id="lead-interest"
+                    value={selected.productInterest}
+                    onChange={(event) => setSelected({ ...selected, productInterest: event.target.value })}
+                    className="crm-input !py-1.5"
+                  />
                 </div>
                 <div>
-                  <p className="crm-label">Stage</p>
+                  <label className="crm-label" htmlFor="lead-stage">Stage</label>
                   <select
+                    id="lead-stage"
                     value={selected.status}
-                    onChange={async (event) => {
-                      const status = event.target.value;
-                      setSelected({ ...selected, status });
-                      await patch(selected.id, { status });
-                    }}
+                    onChange={(event) => setSelected({ ...selected, status: event.target.value })}
                     className="crm-input !py-1.5"
                   >
                     {LEAD_STATUSES.map((stage) => (
@@ -345,31 +422,47 @@ export function LeadsBoard({ initial }: { initial: CrmLead[] }) {
                     ))}
                   </select>
                 </div>
+                <div>
+                  <label className="crm-label" htmlFor="lead-value">Deal value (IDR)</label>
+                  <input
+                    id="lead-value"
+                    type="number"
+                    min={0}
+                    step={50000}
+                    value={selected.valueIdr}
+                    onChange={(event) =>
+                      setSelected({ ...selected, valueIdr: Number(event.target.value) || 0 })
+                    }
+                    className="crm-input !py-1.5"
+                  />
+                  <p className="mt-1 text-[0.58rem] text-[#a19683]">
+                    Used for the open-pipeline total.
+                  </p>
+                </div>
               </div>
+
               <div>
-                <label className="crm-label" htmlFor="lead-notes">
-                  Studio notes
-                </label>
+                <label className="crm-label" htmlFor="lead-notes">Studio notes</label>
                 <textarea
                   id="lead-notes"
                   rows={3}
-                  value={notes}
-                  onChange={(event) => setNotes(event.target.value)}
+                  value={selected.notes}
+                  onChange={(event) => setSelected({ ...selected, notes: event.target.value })}
                   placeholder="Quote sent, sizing notes, follow-up date…"
                   className="crm-input resize-none"
                 />
               </div>
             </div>
 
-            <div className="flex items-center justify-between gap-2 border-t border-crm-line px-5 py-4">
-              <div className="flex gap-2">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-t border-crm-line px-5 py-4">
+              <div className="flex flex-wrap gap-2">
                 <a
                   href={`mailto:${selected.email}?subject=${encodeURIComponent("Tahura Boots — your enquiry")}`}
                   className="rounded-lg border border-crm-line px-3 py-2 text-[0.6rem] font-semibold uppercase tracking-[0.1em] text-[#5f5548] hover:border-[#c6b699]"
                 >
-                  Reply by email
+                  Email
                 </a>
-                {selected.phone && (
+                {selected.phone.replace(/\D/g, "") && (
                   <a
                     href={`https://wa.me/${selected.phone.replace(/[^0-9]/g, "")}`}
                     target="_blank"
@@ -379,19 +472,95 @@ export function LeadsBoard({ initial }: { initial: CrmLead[] }) {
                     WhatsApp
                   </a>
                 )}
+                <button
+                  type="button"
+                  onClick={() => setPendingDelete(selected)}
+                  className="rounded-lg border border-transparent px-3 py-2 text-[0.6rem] font-semibold uppercase tracking-[0.1em] text-[#a19683] hover:border-[#dfc0bb] hover:bg-[#f1dedb] hover:text-[#88423a]"
+                >
+                  Delete
+                </button>
               </div>
               <button
                 type="button"
-                onClick={saveNotes}
-                disabled={savingNotes}
+                onClick={saveCard}
+                disabled={savingCard || busy === selected.id}
                 className="rounded-lg bg-ink px-4 py-2.5 text-[0.6rem] font-semibold uppercase tracking-[0.12em] text-paper transition-colors hover:bg-ink-3 disabled:opacity-60"
               >
-                {savingNotes ? "Saving…" : "Save notes"}
+                {savingCard ? "Saving…" : "Save card"}
               </button>
             </div>
+          </>
+        )}
+      </Modal>
+
+      {/* ── New lead ────────────────────────────────────────────────── */}
+      <Modal open={creating} onClose={() => setCreating(false)} labelledBy="lead-new-title">
+        <form onSubmit={createLead}>
+          <ModalHeader
+            id="lead-new-title"
+            eyebrow="Pipeline"
+            title="Add a lead by hand"
+            onClose={() => setCreating(false)}
+          />
+          <div className="grid gap-3 px-5 py-4 sm:grid-cols-2">
+            <div>
+              <label className="crm-label" htmlFor="new-lead-name">Name</label>
+              <input id="new-lead-name" required value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })} className="crm-input" placeholder="Raka Pradipta" />
+            </div>
+            <div>
+              <label className="crm-label" htmlFor="new-lead-email">Email</label>
+              <input id="new-lead-email" required type="email" value={draft.email} onChange={(event) => setDraft({ ...draft, email: event.target.value })} className="crm-input" placeholder="raka@email.com" />
+            </div>
+            <div>
+              <label className="crm-label" htmlFor="new-lead-phone">Phone / WhatsApp</label>
+              <input id="new-lead-phone" value={draft.phone} onChange={(event) => setDraft({ ...draft, phone: event.target.value })} className="crm-input" placeholder="+62 812 …" />
+            </div>
+            <div>
+              <label className="crm-label" htmlFor="new-lead-country">Country</label>
+              <input id="new-lead-country" value={draft.country} onChange={(event) => setDraft({ ...draft, country: event.target.value })} className="crm-input" />
+            </div>
+            <div>
+              <label className="crm-label" htmlFor="new-lead-pair">Pair of interest</label>
+              <input id="new-lead-pair" value={draft.productInterest} onChange={(event) => setDraft({ ...draft, productInterest: event.target.value })} className="crm-input" placeholder="Ters Kopo Brogue · EU 43" />
+            </div>
+            <div>
+              <label className="crm-label" htmlFor="new-lead-value">Deal value (IDR)</label>
+              <input id="new-lead-value" type="number" min={0} step={50000} value={draft.valueIdr} onChange={(event) => setDraft({ ...draft, valueIdr: event.target.value })} className="crm-input" placeholder="3450000" />
+            </div>
+            <div className="sm:col-span-2">
+              <label className="crm-label" htmlFor="new-lead-source">Came from</label>
+              <select id="new-lead-source" value={draft.source} onChange={(event) => setDraft({ ...draft, source: event.target.value })} className="crm-input">
+                <option value="studio">Studio visit / phone</option>
+                <option value="whatsapp">WhatsApp</option>
+                <option value="instagram">Instagram</option>
+                <option value="contact">Storefront enquiry</option>
+              </select>
+            </div>
+            <div className="sm:col-span-2">
+              <label className="crm-label" htmlFor="new-lead-message">What did they ask for?</label>
+              <textarea id="new-lead-message" rows={3} value={draft.message} onChange={(event) => setDraft({ ...draft, message: event.target.value })} className="crm-input resize-none" placeholder="Size run, leather, timeline…" />
+            </div>
           </div>
-        </div>
-      )}
+          <div className="flex items-center justify-end gap-2 border-t border-crm-line px-5 py-4">
+            <button type="button" onClick={() => setCreating(false)} className="rounded-lg border border-crm-line px-4 py-2.5 text-[0.62rem] font-semibold uppercase tracking-[0.12em] text-[#7a7062]">
+              Cancel
+            </button>
+            <button type="submit" disabled={savingNew} className="rounded-lg bg-ink px-4 py-2.5 text-[0.62rem] font-semibold uppercase tracking-[0.12em] text-paper transition-colors hover:bg-ink-3 disabled:opacity-60">
+              {savingNew ? "Adding…" : "Add lead"}
+            </button>
+          </div>
+        </form>
+      </Modal>
+
+      <ConfirmDialog
+        open={Boolean(pendingDelete)}
+        title={`Delete ${pendingDelete?.name ?? "this lead"}?`}
+        message="The enquiry disappears from the pipeline. This cannot be undone."
+        confirmLabel="Delete lead"
+        busy={busy === pendingDelete?.id}
+        onConfirm={confirmDelete}
+        onCancel={() => setPendingDelete(null)}
+      />
     </div>
   );
 }
