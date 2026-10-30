@@ -8,7 +8,7 @@ database **PostgreSQL (Neon)**.
 ```
 Storefront  →  /            katalog, hero, craft, configurator, journal, kontak
 CRM         →  /crm         dashboard omzet, pesanan, produk, leads
-Kesehatan   →  /api/health  cek koneksi database (200 = ok)
+Kesehatan   →  /api/health  diagnosa deployment: koneksi, tabel, sequence, seed
 ```
 
 ---
@@ -58,7 +58,7 @@ DIRECT_URL="postgresql://USER:PASSWORD@ep-xxx.ap-southeast-1.aws.neon.tech/neond
 npm run db:migrate
 
 # 3. cek koneksi aplikasi
-curl http://localhost:3000/api/health     # {"ok":true}
+curl http://localhost:3000/api/health     # {"ok":true,"ready":true,...}
 ```
 
 Alternatif tanpa CLI:
@@ -136,6 +136,7 @@ Semua tabel punya index untuk kolom yang dipakai filter/sortir CRM (`status`,
 | `npm run lint` / `typecheck` | ESLint & TypeScript. |
 | `npm run db:generate` | Generate SQL migration baru setelah `schema.ts` diubah. |
 | `npm run db:migrate` | Terapkan migration ke database. |
+| — | `drizzle/bootstrap.sql` — versi idempotent untuk Neon SQL Editor. |
 | `npm run db:push` | Sinkronkan skema langsung (prototyping). |
 | `npm run db:studio` | Drizzle Studio (GUI database). |
 | `npm run db:check` | Verifikasi koneksi + daftar tabel & jumlah baris. Exit code 1 kalau skema belum lengkap. |
@@ -202,9 +203,24 @@ Env opsional: `SNAPSHOT_BASE_URL` (default `http://127.0.0.1:3000`),
 
 ## 6. Deploy
 
-Cocok untuk Vercel/Netlify. Tambahkan `DATABASE_URL`, `DIRECT_URL`, dan
-`CRM_PASSCODE` di environment variables hosting, lalu jalankan migration sekali
-dari lokal (`npm run db:migrate`) atau lewat CI.
+Panduan lengkap Vercel + Neon: [`documentation/DEPLOY-VERCEL.md`](documentation/DEPLOY-VERCEL.md).
+
+Ringkasnya — set environment variables berikut di hosting:
+
+| Key | Wajib | Catatan |
+| --- | --- | --- |
+| `DATABASE_URL` | ✅ | connection string **pooled** (`-pooler`) |
+| `DIRECT_URL` | – | hanya untuk `drizzle-kit` |
+| `CRM_PASSCODE` | ✅ | **tanpa ini login CRM ditolak di production** |
+| `AUTH_SECRET` | ✅ | `openssl rand -base64 32` |
+| `NEXT_PUBLIC_SITE_URL` | – | canonical/sitemap |
+
+Lalu terapkan skema (pilih satu): tempel `drizzle/bootstrap.sql` di Neon SQL
+Editor, jalankan `npm run db:migrate`, atau pakai workflow GitHub Actions.
+
+Terakhir buka **`/api/health`** — endpoint ini melaporkan koneksi, tabel,
+sequence, jumlah baris, dan konfigurasi yang masih kurang. `ok:true` +
+`ready:true` berarti siap dipakai.
 
 Font dan gambar disajikan dari repo sendiri (`public/`), jadi tidak butuh
 koneksi ke Google Fonts atau CDN eksternal saat build.

@@ -1,7 +1,14 @@
 export const site = {
   name: "Tahura Boots Company",
-  /** Ganti lewat NEXT_PUBLIC_SITE_URL saat deploy ke domain sendiri. */
-  url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://tahuraboots.co",
+  /**
+   * URL publik untuk canonical/sitemap/structured data.
+   * Prioritas: NEXT_PUBLIC_SITE_URL → domain produksi Vercel → domain studio.
+   */
+  url:
+    process.env.NEXT_PUBLIC_SITE_URL ??
+    (process.env.VERCEL_PROJECT_PRODUCTION_URL
+      ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+      : "https://tahuraboots.co"),
   shortName: "Tahura",
   tagline: "Hand-welted in Bandung",
   founded: 2013,

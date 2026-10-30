@@ -22,9 +22,15 @@ const globalForDb = globalThis as typeof globalThis & {
  */
 function createPool() {
   const isNeon = /neon\.tech/.test(databaseUrl ?? "");
+  // Di Vercel setiap instance punya pool sendiri; 1 koneksi per lambda cukup
+  // karena Neon sudah menyediakan PgBouncer di connection string "-pooler".
+  const isServerless = Boolean(process.env.VERCEL);
+  const max = Number(
+    process.env.PG_POOL_MAX ?? (isServerless ? 1 : 5),
+  );
   return new Pool({
     connectionString: databaseUrl,
-    max: Number(process.env.PG_POOL_MAX ?? 5),
+    max,
     idleTimeoutMillis: 30_000,
     connectionTimeoutMillis: 10_000,
     keepAlive: true,

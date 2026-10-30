@@ -466,6 +466,13 @@ function daysAgo(days: number) {
 
 let seedPromise: Promise<void> | null = null;
 
+/**
+ * Kunci advisory agar seed hanya berjalan di SATU instance.
+ *
+ * Di Vercel, beberapa lambda bisa cold-start bersamaan; tanpa kunci ini dua
+ * instance sama-sama melihat tabel kosong lalu menyisipkan pesanan dengan nomor
+ * yang sama (`TB-1041`), melanggar UNIQUE, transaksi gagal, dan halaman 500.
+ */
 async function runSeed() {
   const [existing] = await db
     .select({ count: sql<number>`count(*)::int` })
@@ -474,6 +481,15 @@ async function runSeed() {
   if (existing && existing.count > 0) return;
 
   await db.transaction(async (tx) => {
+    // Tunggu sampai instance lain selesai, lalu cek ulang di dalam kunci.
+    await tx.execute(sql`select pg_advisory_xact_lock(hashtext('tahura:seed'))`);
+
+    const [recheck] = await tx
+      .select({ count: sql<number>`count(*)::int` })
+      .from(products);
+
+    if (recheck && recheck.count > 0) return;
+
     const insertedProducts = await tx
       .insert(products)
       .values(seedProducts.map((product) => ({ ...product })))
@@ -516,6 +532,7 @@ async function runSeed() {
           notes: order.notes,
           createdAt: daysAgo(order.daysAgo),
         })
+        .onConflictDoNothing()
         .returning();
 
       if (createdOrder) {

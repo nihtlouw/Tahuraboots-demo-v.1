@@ -52,12 +52,12 @@ npm run db:push           # drizzle-kit membandingkan schema.ts vs database
 **Opsi B — Neon SQL Editor**
 
 1. Buka <https://console.neon.tech> → pilih project → tab **SQL Editor**.
-2. Jalankan file migration **berurutan**:
-   - `drizzle/0000_sleepy_valeria_richards.sql` (4 tabel awal)
-   - `drizzle/0001_hardening.sql` (tabel `subscribers`, 14 index, dan sequence
-     `order_number_seq` untuk nomor pesanan)
-3. Teks `--> statement-breakpoint` boleh dibiarkan; SQL Editor menjalankan
-   seluruh isi skrip.
+2. Cara termudah: copy seluruh isi **`drizzle/bootstrap.sql`** — file idempotent
+   yang sudah menggabungkan kedua migration (5 tabel, 14 index, sequence
+   `order_number_seq`). Aman dijalankan berulang.
+3. Alternatif manual, jalankan berurutan: `drizzle/0000_sleepy_valeria_richards.sql`
+   lalu `drizzle/0001_hardening.sql`. Teks `--> statement-breakpoint` boleh
+   dibiarkan.
 
 Setelah tabel ada, buka halaman utama aplikasi — data contoh akan terisi
 otomatis lewat `ensureSeed()` di `src/db/seed.ts`.
