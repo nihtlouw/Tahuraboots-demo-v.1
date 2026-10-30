@@ -46,14 +46,14 @@ export function CrmLogin() {
           <Crest className="h-10 w-auto text-brass" />
           <div>
             <p className="font-display text-xl tracking-[0.16em] text-paper">TAHURA</p>
-            <p className="text-[0.5rem] uppercase tracking-[0.3em] text-paper/45">
+            <p className="text-[0.6rem] uppercase tracking-[0.3em] text-paper/45">
               Boots Company
             </p>
           </div>
         </div>
 
         <div className="relative max-w-md">
-          <p className="text-[0.6rem] font-medium uppercase tracking-[0.26em] text-brass">
+          <p className="text-[0.66rem] font-medium uppercase tracking-[0.26em] text-brass">
             Owner console
           </p>
           <h1 className="mt-5 font-display text-[clamp(2.3rem,4vw,3.4rem)] font-light leading-[1.02] text-paper">
@@ -73,7 +73,7 @@ export function CrmLogin() {
             ].map(([value, label]) => (
               <div key={label}>
                 <p className="font-display text-xl text-paper">{value}</p>
-                <p className="mt-1 text-[0.52rem] uppercase tracking-[0.14em] text-paper/40">
+                <p className="mt-1 text-[0.62rem] uppercase tracking-[0.14em] text-paper/40">
                   {label}
                 </p>
               </div>
@@ -81,7 +81,7 @@ export function CrmLogin() {
           </div>
         </div>
 
-        <p className="relative text-[0.56rem] uppercase tracking-[0.2em] text-paper/30">
+        <p className="relative text-[0.64rem] uppercase tracking-[0.2em] text-paper/30">
           Jl. Ters Kopo · Bandung 40218
         </p>
       </div>
@@ -92,7 +92,7 @@ export function CrmLogin() {
             <Crest className="h-9 w-auto text-[#7a5a2e]" />
             <div>
               <p className="font-display text-lg tracking-[0.16em] text-[#221b15]">TAHURA</p>
-              <p className="text-[0.5rem] uppercase tracking-[0.26em] text-[#8b8173]">
+              <p className="text-[0.6rem] uppercase tracking-[0.26em] text-[#8b8173]">
                 Owner console
               </p>
             </div>
@@ -123,7 +123,7 @@ export function CrmLogin() {
             <button
               type="submit"
               disabled={loading}
-              className="flex w-full items-center justify-center gap-2 rounded-lg bg-ink px-4 py-3 text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-paper transition-colors hover:bg-ink-3 disabled:opacity-60"
+              className="flex w-full items-center justify-center gap-2 rounded-lg bg-ink px-4 py-3 text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-paper transition-colors hover:bg-ink-3 disabled:opacity-60"
             >
               {loading ? "Opening the console…" : "Open the console"}
               <span>→</span>
@@ -136,7 +136,7 @@ export function CrmLogin() {
           </form>
 
           <div className="mt-6 rounded-lg border border-[#e6d6b8] bg-[#fbf4e5] px-4 py-3">
-            <p className="text-[0.58rem] font-semibold uppercase tracking-[0.16em] text-[#8a6a3c]">
+            <p className="text-[0.64rem] font-semibold uppercase tracking-[0.16em] text-[#8a6a3c]">
               Demo access
             </p>
             <p className="mt-1 text-[0.76rem] leading-relaxed text-[#7a6244]">
@@ -151,7 +151,7 @@ export function CrmLogin() {
 
           <Link
             href="/"
-            className="mt-6 inline-flex items-center gap-2 text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-[#8b8173] transition-colors hover:text-[#221b15]"
+            className="mt-6 inline-flex items-center gap-2 text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-[#8b8173] transition-colors hover:text-[#221b15]"
           >
             ← Back to the storefront
           </Link>

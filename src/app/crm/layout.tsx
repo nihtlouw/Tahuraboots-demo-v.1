@@ -7,6 +7,7 @@ import { ensureSeed } from "@/db/seed";
 import { isOwner } from "@/lib/auth";
 import { CrmLogin } from "@/components/crm/crm-login";
 import { CrmSidebar } from "@/components/crm/crm-sidebar";
+import { CrmTabBar } from "@/components/crm/crm-tabbar";
 
 export const metadata: Metadata = {
   title: { default: "Owner CRM", template: "%s · Tahura CRM" },
@@ -53,13 +54,16 @@ export default async function CrmLayout({ children }: { children: ReactNode }) {
   const counts = await getCounts();
 
   return (
-    <div className="min-h-dvh bg-crm text-[#221b15]">
+    <div className="crm-shell min-h-dvh bg-crm text-[#221b15]">
       <CrmSidebar counts={counts} />
       <main className="lg:pl-[252px]">
-        <div className="mx-auto max-w-[1500px] px-4 py-5 pb-[max(1.25rem,env(safe-area-inset-bottom,0px))] sm:px-6 sm:py-6 lg:px-8 lg:py-8">
+        {/* Ruang bawah ekstra di ponsel: tab bar setinggi 56px + gesture bar.
+            Tanpa ini baris terakhir tabel/daftar tertutup tab bar. */}
+        <div className="crm-page mx-auto max-w-[1500px] px-4 pt-5 pb-[calc(5rem+env(safe-area-inset-bottom,0px))] sm:px-6 sm:pt-6 lg:px-8 lg:py-8 lg:pb-8">
           {children}
         </div>
       </main>
+      <CrmTabBar counts={counts} />
     </div>
   );
 }

@@ -233,13 +233,13 @@ export default async function CrmOverviewPage() {
           <>
             <Link
               href="/crm/orders"
-              className="inline-flex items-center gap-2 rounded-lg bg-ink px-4 py-2.5 text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-paper transition-colors hover:bg-ink-3"
+              className="inline-flex items-center gap-2 rounded-lg bg-ink px-4 py-2.5 text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-paper transition-colors hover:bg-ink-3"
             >
               + Log an order
             </Link>
             <Link
               href="/crm/products"
-              className="inline-flex items-center gap-2 rounded-lg border border-crm-line bg-white px-4 py-2.5 text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-[#5f5548] transition-colors hover:border-[#c6b699]"
+              className="inline-flex items-center gap-2 rounded-lg border border-crm-line bg-white px-4 py-2.5 text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-[#5f5548] transition-colors hover:border-[#c6b699]"
             >
               Manage stock
             </Link>
@@ -290,19 +290,25 @@ export default async function CrmOverviewPage() {
           title="Revenue by week"
           subtitle="Paid, in production, shipped and delivered orders over the last eight weeks"
           action={
-            <span className="rounded-full bg-[#f4eee2] px-2.5 py-1 text-[0.6rem] font-semibold text-[#8a6a3c]">
+            <span className="rounded-full bg-[#f4eee2] px-2.5 py-1 text-[0.66rem] font-semibold text-[#8a6a3c]">
               Avg. order {formatIdrCompact(averageOrder)}
             </span>
           }
         >
-          <div className="px-5 pb-5 pt-6">
-            <div className="flex h-40 items-end gap-1.5 sm:h-48 sm:gap-4">
+          <div className="px-3.5 pb-4 pt-5 sm:px-5 sm:pb-5 sm:pt-6">
+            {/*
+              8 batang di 360px hanya menyisakan ~30px per batang setelah
+              padding. Label nilai ("Rp 12,3 jt") lebih lebar dari kolomnya,
+              jadi di ponsel disembunyikan dan tanggal dipendekkan menjadi
+              angka hari saja; versi penuh kembali mulai `sm`.
+            */}
+            <div className="flex h-40 items-end gap-1 sm:h-48 sm:gap-4">
               {weeks.map((week, index) => {
                 const height = Math.max(4, Math.round((week.value / peak) * 100));
                 const isCurrent = index === weeks.length - 1;
                 return (
-                  <div key={`${week.label}-${index}`} className="flex flex-1 flex-col items-center gap-2">
-                    <span className="text-[0.55rem] font-medium text-[#8b8173]">
+                  <div key={`${week.label}-${index}`} className="flex min-w-0 flex-1 flex-col items-center gap-2">
+                    <span className="hidden text-[0.66rem] font-medium text-[#8b8173] sm:block">
                       {week.value > 0 ? formatIdrCompact(week.value) : "—"}
                     </span>
                     <div className="flex w-full flex-1 items-end">
@@ -316,14 +322,15 @@ export default async function CrmOverviewPage() {
                         }`}
                       />
                     </div>
-                    <span className="text-[0.55rem] uppercase tracking-[0.08em] text-[#8b8173]">
-                      {week.label}
+                    <span className="text-[0.66rem] font-medium uppercase tracking-[0.02em] tabular-nums text-[#8b8173] sm:text-[0.62rem] sm:tracking-[0.08em]">
+                      <span className="sm:hidden">{week.label.slice(0, 2)}</span>
+                      <span className="hidden sm:inline">{week.label}</span>
                     </span>
                   </div>
                 );
               })}
             </div>
-            <div className="mt-4 flex items-center justify-between border-t border-crm-line pt-3 text-[0.62rem] text-[#8b8173]">
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-crm-line pt-3 text-[0.66rem] text-[#8b8173]">
               <span className="flex items-center gap-2">
                 <span className="h-2 w-2 rounded-full bg-[#6d2126]" /> Current week
               </span>
@@ -332,7 +339,7 @@ export default async function CrmOverviewPage() {
           </div>
         </Panel>
 
-        <Panel title="Lead pipeline" subtitle="Configurator builds and studio enquiries" action={<Link href="/crm/leads" className="text-[0.6rem] font-semibold uppercase tracking-[0.12em] text-[#8a6a3c] hover:text-[#221b15]">Open board →</Link>}>
+        <Panel title="Lead pipeline" subtitle="Configurator builds and studio enquiries" action={<Link href="/crm/leads" className="text-[0.66rem] font-semibold uppercase tracking-[0.12em] text-[#8a6a3c] hover:text-[#221b15]">Open board →</Link>}>
           <div className="space-y-3 px-5 py-4">
             {pipeline.map((stage) => (
               <div key={stage.key}>
@@ -355,7 +362,7 @@ export default async function CrmOverviewPage() {
               </div>
             ))}
             <div className="mt-4 rounded-lg bg-[#faf6ee] px-3 py-3">
-              <p className="text-[0.58rem] font-semibold uppercase tracking-[0.14em] text-[#8a6a3c]">
+              <p className="text-[0.64rem] font-semibold uppercase tracking-[0.14em] text-[#8a6a3c]">
                 Open pipeline value
               </p>
               <p className="mt-1 font-display text-xl text-[#221b15]">
@@ -371,7 +378,7 @@ export default async function CrmOverviewPage() {
           title="Latest orders"
           subtitle="Newest at the top"
           action={
-            <Link href="/crm/orders" className="text-[0.6rem] font-semibold uppercase tracking-[0.12em] text-[#8a6a3c] hover:text-[#221b15]">
+            <Link href="/crm/orders" className="text-[0.66rem] font-semibold uppercase tracking-[0.12em] text-[#8a6a3c] hover:text-[#221b15]">
               All orders →
             </Link>
           }
@@ -385,7 +392,7 @@ export default async function CrmOverviewPage() {
                   <p className="truncate text-[0.8rem] font-medium text-[#3c332a]">
                     {order.customerName}
                   </p>
-                  <p className="truncate text-[0.64rem] text-[#a19683]">
+                  <p className="truncate text-[0.68rem] text-[#a19683]">
                     {order.orderNumber} · {order.city} · {timeAgo(order.createdAt)}
                   </p>
                 </div>
@@ -409,7 +416,7 @@ export default async function CrmOverviewPage() {
           <div className="hidden overflow-x-auto md:block">
             <table className="w-full min-w-[560px] text-left">
               <thead>
-                <tr className="border-b border-crm-line text-[0.55rem] uppercase tracking-[0.14em] text-[#a19683]">
+                <tr className="border-b border-crm-line text-[0.62rem] uppercase tracking-[0.14em] text-[#a19683]">
                   <th className="px-4 py-2.5 font-semibold">Order</th>
                   <th className="px-3 py-2.5 font-semibold">Customer</th>
                   <th className="px-3 py-2.5 font-semibold">Channel</th>
@@ -422,14 +429,14 @@ export default async function CrmOverviewPage() {
                   <tr key={order.id} className="border-b border-crm-line/70 last:border-0 hover:bg-[#faf7f1]">
                     <td className="px-4 py-3">
                       <p className="text-[0.74rem] font-semibold text-[#221b15]">{order.orderNumber}</p>
-                      <p className="text-[0.6rem] text-[#a19683]">{timeAgo(order.createdAt)}</p>
+                      <p className="text-[0.66rem] text-[#a19683]">{timeAgo(order.createdAt)}</p>
                     </td>
                     <td className="px-3 py-3">
                       <div className="flex items-center gap-2">
                         <Avatar name={order.customerName} />
                         <div>
                           <p className="text-[0.74rem] text-[#3c332a]">{order.customerName}</p>
-                          <p className="text-[0.6rem] text-[#a19683]">{order.city}, {order.country}</p>
+                          <p className="text-[0.66rem] text-[#a19683]">{order.city}, {order.country}</p>
                         </div>
                       </div>
                     </td>
@@ -453,18 +460,18 @@ export default async function CrmOverviewPage() {
                 <li key={item.key} className="flex items-start justify-between gap-3 px-4 py-3">
                   <div className="min-w-0">
                     <p className="flex items-center gap-2 text-[0.74rem] font-medium text-[#3c332a]">
-                      <span className={`rounded-full px-1.5 py-0.5 text-[0.55rem] font-semibold ${item.tone}`}>
+                      <span className={`rounded-full px-1.5 py-0.5 text-[0.62rem] font-semibold ${item.tone}`}>
                         !
                       </span>
                       {item.label}
                     </p>
-                    <p className="mt-1 line-clamp-2 text-[0.62rem] leading-relaxed text-[#a19683]">
+                    <p className="mt-1 line-clamp-2 text-[0.66rem] leading-relaxed text-[#a19683]">
                       {item.detail}
                     </p>
                   </div>
                   <Link
                     href={item.href}
-                    className="shrink-0 rounded-md border border-crm-line bg-white px-2 py-1 text-[0.58rem] font-semibold uppercase tracking-[0.1em] text-[#8a6a3c] transition-colors hover:border-[#c6b699]"
+                    className="shrink-0 rounded-md border border-crm-line bg-white px-2 py-1 text-[0.64rem] font-semibold uppercase tracking-[0.1em] text-[#8a6a3c] transition-colors hover:border-[#c6b699]"
                   >
                     {item.cta}
                   </Link>
@@ -486,7 +493,7 @@ export default async function CrmOverviewPage() {
               {recentSubscribers.map((row) => (
                 <li key={row.id} className="px-4 py-2.5">
                   <p className="truncate text-[0.72rem] text-[#3c332a]">{row.email}</p>
-                  <p className="mt-0.5 truncate text-[0.6rem] text-[#a19683]">
+                  <p className="mt-0.5 truncate text-[0.66rem] text-[#a19683]">
                     {row.source}
                     {row.interest ? ` · ${row.interest}` : ""} · {timeAgo(row.createdAt)}
                   </p>

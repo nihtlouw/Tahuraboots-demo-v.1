@@ -94,6 +94,28 @@ Validasi yang berjalan di server:
 - Aksi merusak (hapus order, hapus pair, hapus lead) memakai dialog konfirmasi,
   bukan `window.confirm`.
 
+### Di ponsel (Android)
+
+- **Tab bar bawah** berisi Overview / Orders / Leads / Inventory: pindah
+  halaman cukup satu ketukan, tanpa membuka drawer. Badge angka mengikuti
+  hitungan yang sama dengan sidebar. Drawer tetap ada untuk pintasan dan
+  **Sign out**; ia meremangkan tab bar (`z-20 < z-30`) dan menutupi latar
+  dengan overlay.
+- Tab bar memakai `pb-[env(safe-area-inset-bottom)]`, dan konten diberi jarak
+  bawah `calc(5rem + safe-area)` supaya baris terakhir tidak tertutup gesture
+  bar Android.
+- Di bawah `sm`, setiap `button`, `select`, dan `[role="button"]` di dalam
+  `.crm-shell` dipaksa setinggi 44px lewat satu aturan di `globals.css`, jadi
+  tombol ringkas versi desktop tetap aman disentuh tanpa perlu menambal
+  puluhan komponen satu per satu.
+- Label mikro dinaikkan: tidak ada lagi teks di bawah 10px di CRM. Untuk KPI,
+  nilai rupiah di ponsel turun ke 1.05rem agar `Rp 12.345.678` tetap satu baris
+  di kartu selebar 158px.
+- Bar chart revenue menyembunyikan angka per batang di ponsel dan menampilkan
+  tanggal sebagai angka hari saja; label lengkap kembali mulai `sm`.
+- Konten dibungkus `.crm-page` dengan `overflow-x: clip` sebagai pengaman agar
+  halaman tidak bisa digeser ke samping.
+
 ---
 
 ## Endpoint yang dipakai

@@ -4,19 +4,9 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Crest } from "@/components/brand";
+import { CRM_LINKS, crmBadge, crmIsActive, type CrmCounts } from "./crm-nav";
 
-const links = [
-  { href: "/crm", label: "Overview", icon: "◧" },
-  { href: "/crm/products", label: "Inventory", icon: "◈" },
-  { href: "/crm/orders", label: "Orders", icon: "❐" },
-  { href: "/crm/leads", label: "Leads", icon: "✧" },
-];
-
-export function CrmSidebar({
-  counts,
-}: {
-  counts: { orders: number; leads: number; lowStock: number };
-}) {
+export function CrmSidebar({ counts }: { counts: CrmCounts }) {
   const pathname = usePathname();
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -45,21 +35,11 @@ export function CrmSidebar({
     setSigningOut(false);
   }
 
-  const badge = (href: string) => {
-    if (href === "/crm/orders") return counts.orders;
-    if (href === "/crm/leads") return counts.leads;
-    if (href === "/crm/products") return counts.lowStock;
-    return 0;
-  };
-
   const nav = (
     <nav className="space-y-1">
-      {links.map((link) => {
-        const active =
-          link.href === "/crm"
-            ? pathname === "/crm"
-            : pathname.startsWith(link.href);
-        const count = badge(link.href);
+      {CRM_LINKS.map((link) => {
+        const active = crmIsActive(pathname, link.href);
+        const count = crmBadge(link.href, counts);
         return (
           <Link
             key={link.href}
@@ -75,13 +55,13 @@ export function CrmSidebar({
               <span
                 className={`text-[0.9rem] ${active ? "text-brass" : "text-paper/35 group-hover:text-brass/70"}`}
               >
-                {link.icon}
+                {link.glyph}
               </span>
               {link.label}
             </span>
             {count > 0 && (
               <span
-                className={`rounded-full px-1.5 py-0.5 text-[0.58rem] font-semibold ${
+                className={`rounded-full px-1.5 py-0.5 text-[0.64rem] font-semibold ${
                   active
                     ? "bg-brass text-ink"
                     : "bg-paper/10 text-paper/60 group-hover:bg-paper/15"
@@ -98,17 +78,23 @@ export function CrmSidebar({
 
   return (
     <>
-      <div className="safe-top sticky top-0 z-30 flex min-h-14 items-center justify-between border-b border-crm-line bg-crm/95 px-4 py-2 backdrop-blur lg:hidden">
-        <span className="flex items-center gap-2">
-          <Crest className="h-7 w-auto text-[#7a5a2e]" />
-          <span className="font-display text-base tracking-[0.14em] text-[#221b15]">
-            TAHURA <span className="text-[0.6rem] uppercase tracking-[0.2em] text-[#8b8173]">CRM</span>
+      {/* z-40: saat drawer terbuka, overlay `z-30` menutupi baris ini — tanpa
+          naik satu lapis tombol "Close" berubah label tapi tidak bisa ditekan. */}
+      <div className="safe-top sticky top-0 z-40 flex min-h-14 items-center justify-between gap-2 border-b border-crm-line bg-crm/95 px-4 py-2 backdrop-blur lg:hidden">
+        <span className="flex min-w-0 items-center gap-2">
+          <Crest className="h-7 w-auto shrink-0 text-[#7a5a2e]" />
+          <span className="truncate font-display text-base tracking-[0.14em] text-[#221b15]">
+            TAHURA
+          </span>
+          {/* Di ponsel tab bar hanya menandai posisi; label ini menyebut namanya. */}
+          <span className="shrink-0 rounded-full bg-[#efe7d6] px-2 py-0.5 text-[0.66rem] font-semibold uppercase tracking-[0.14em] text-[#7a5a2e]">
+            {CRM_LINKS.find((link) => crmIsActive(pathname, link.href))?.label ?? "CRM"}
           </span>
         </span>
         <button
           type="button"
           onClick={() => setOpen((value) => !value)}
-          className="flex min-h-11 items-center rounded-md border border-crm-line px-3.5 text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-[#5f5548] active:bg-[#f1ebdf]"
+          className="flex min-h-11 items-center rounded-md border border-crm-line px-3.5 text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-[#5f5548] active:bg-[#f1ebdf]"
         >
           {open ? "Close" : "Menu"}
         </button>
@@ -127,7 +113,7 @@ export function CrmSidebar({
               <span className="block font-display text-lg leading-none tracking-[0.16em] text-paper">
                 TAHURA
               </span>
-              <span className="mt-1 block text-[0.48rem] uppercase tracking-[0.26em] text-paper/45">
+              <span className="mt-1 block text-[0.60rem] uppercase tracking-[0.26em] text-paper/45">
                 Owner console
               </span>
             </span>
@@ -136,7 +122,7 @@ export function CrmSidebar({
             type="button"
             onClick={() => setOpen(false)}
             aria-label="Close navigation"
-            className="text-paper/50 lg:hidden"
+            className="-mr-2 flex h-11 w-11 items-center justify-center rounded-md text-lg text-paper/50 active:bg-paper/10 lg:hidden"
           >
             ✕
           </button>
@@ -144,12 +130,12 @@ export function CrmSidebar({
 
         <div className="relative border-y border-paper/10 px-5 py-3">
           <div className="flex items-center gap-2">
-            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-oxblood/70 text-[0.58rem] font-semibold text-paper">
+            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-oxblood/70 text-[0.64rem] font-semibold text-paper">
               TB
             </span>
             <span>
               <span className="block text-[0.72rem] text-paper/85">Studio owner</span>
-              <span className="block text-[0.55rem] uppercase tracking-[0.16em] text-paper/40">
+              <span className="block text-[0.62rem] uppercase tracking-[0.16em] text-paper/40">
                 Bandung · Admin
               </span>
             </span>
@@ -157,12 +143,12 @@ export function CrmSidebar({
         </div>
 
         <div className="relative flex-1 overflow-y-auto px-3 py-4">
-          <p className="px-3 pb-2 text-[0.52rem] font-semibold uppercase tracking-[0.22em] text-paper/30">
+          <p className="px-3 pb-2 text-[0.62rem] font-semibold uppercase tracking-[0.22em] text-paper/30">
             Manage
           </p>
           {nav}
 
-          <p className="mt-6 px-3 pb-2 text-[0.52rem] font-semibold uppercase tracking-[0.22em] text-paper/30">
+          <p className="mt-6 px-3 pb-2 text-[0.62rem] font-semibold uppercase tracking-[0.22em] text-paper/30">
             Shortcuts
           </p>
           <div className="space-y-1">
@@ -170,13 +156,13 @@ export function CrmSidebar({
               href="/#collection"
               className="flex min-h-11 items-center justify-between rounded-lg px-3 py-2 text-[0.8rem] text-paper/55 transition-colors hover:bg-paper/5 hover:text-paper active:bg-paper/10"
             >
-              View storefront <span className="text-[0.65rem]">↗</span>
+              View storefront <span className="text-[0.68rem]">↗</span>
             </Link>
             <Link
               href="/#custom"
               className="flex items-center justify-between rounded-lg px-3 py-2 text-[0.78rem] text-paper/55 transition-colors hover:bg-paper/5 hover:text-paper"
             >
-              Configurator <span className="text-[0.65rem]">↗</span>
+              Configurator <span className="text-[0.68rem]">↗</span>
             </Link>
             <a
               href="https://www.instagram.com/tahurabootsco"
@@ -184,7 +170,7 @@ export function CrmSidebar({
               rel="noreferrer"
               className="flex items-center justify-between rounded-lg px-3 py-2 text-[0.78rem] text-paper/55 transition-colors hover:bg-paper/5 hover:text-paper"
             >
-              Instagram <span className="text-[0.65rem]">↗</span>
+              Instagram <span className="text-[0.68rem]">↗</span>
             </a>
           </div>
         </div>
@@ -194,11 +180,11 @@ export function CrmSidebar({
             type="button"
             onClick={signOut}
             disabled={signingOut}
-            className="min-h-11 w-full rounded-lg border border-paper/15 px-3 py-2.5 text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-paper/65 transition-colors hover:border-brass/60 hover:text-brass active:bg-paper/10 disabled:opacity-50"
+            className="min-h-11 w-full rounded-lg border border-paper/15 px-3 py-2.5 text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-paper/65 transition-colors hover:border-brass/60 hover:text-brass active:bg-paper/10 disabled:opacity-50"
           >
             {signingOut ? "Signing out…" : "Sign out"}
           </button>
-          <p className="mt-3 text-center text-[0.5rem] uppercase tracking-[0.16em] text-paper/25">
+          <p className="mt-3 text-center text-[0.6rem] uppercase tracking-[0.16em] text-paper/25">
             Tahura CRM v1.0
           </p>
         </div>
