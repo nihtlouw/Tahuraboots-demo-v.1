@@ -1,0 +1,48 @@
+<!doctype html>
+<!--
+  GitHub Pages bisa melayani repo ini dari root (Settings → Pages → / root)
+  atau dari /docs. File ini hanya jembatan untuk kasus pertama: arahkan ke
+  snapshot statis di ./docs/. Kalau Pages di-set ke folder /docs, file ini
+  tidak dipublikasikan dan boleh diabaikan.
+-->
+<html lang="id">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Tahura Boots — Demo</title>
+    <meta http-equiv="refresh" content="0; url=./docs/" />
+    <link rel="canonical" href="./docs/" />
+    <style>
+      html,
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        background: #0f0d0b;
+        color: #f4eee2;
+        font: 400 15px/1.6 ui-sans-serif, system-ui, sans-serif;
+        text-align: center;
+      }
+      a {
+        color: #c8a266;
+      }
+      .eyebrow {
+        font-size: 10px;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        color: #a39a8b;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <p class="eyebrow">Tahura Boots Company</p>
+      <p>Membuka demo statis…</p>
+      <p><a href="./docs/">Lanjut ke demo</a></p>
+    </main>
+    <script>
+      location.replace("./docs/");
+    </script>
+  </body>
+</html>

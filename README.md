@@ -44,7 +44,7 @@ masih kosong). Selama pengembangan, folder `drizzle/` bisa dipakai dengan
 
 ## 2. Koneksi database (Neon)
 
-Detail lengkap ada di [`docs/NEON-DATABASE.md`](docs/NEON-DATABASE.md).
+Detail lengkap ada di [`documentation/NEON-DATABASE.md`](documentation/NEON-DATABASE.md).
 Ringkasnya:
 
 ```bash
@@ -118,10 +118,54 @@ public/fonts/                  # Inter + Fraunces (woff2, lokal)
 | `npm run db:push` | Sinkronkan skema langsung (prototyping). |
 | `npm run db:studio` | Drizzle Studio (GUI database). |
 | `npm run db:check` | Verifikasi koneksi + daftar tabel & jumlah baris. Exit code 1 kalau skema belum lengkap. |
+| `npm run pages:build` | Rekam snapshot UI statis ke `docs/` untuk GitHub Pages (butuh server jalan di :3000). |
 
 ---
 
-## 5. Deploy
+## 5. Demo statis di GitHub Pages
+
+GitHub Pages hanya melayani **file statis** — tidak bisa menjalankan Node, API
+routes, atau koneksi Postgres. Karena itu repo ini memakai dua jalur:
+
+| Kebutuhan | Tempat |
+| --- | --- |
+| Lihat tampilan UI tanpa server | GitHub Pages (snapshot statis di `docs/`) |
+| Aplikasi fungsional (DB, form, CRM) | Vercel / Netlify / VPS + `DATABASE_URL` |
+
+Snapshot dibuat dengan `scripts/build-pages-snapshot.mjs`: aplikasi dijalankan
+sungguhan, lalu HTML hasil render + CSS + font + gambar direkam ke `docs/`.
+Semua tautan bersifat **relatif**, jadi folder `docs/` bisa dilayani dari root,
+dari `/docs/`, atau dari custom domain tanpa diubah.
+
+### Sekali setel di GitHub
+
+**Settings → Pages → Build and deployment → Source: Deploy from a branch →
+Branch `main` + Folder `/docs` → Save.**
+
+Selesai. URL: `https://<user>.github.io/<repo>/`
+
+> Alternatif tanpa mengubah setting: biarkan Source di **`/` (root)**. File
+> `index.html` di root akan mengarahkan pengunjung ke `./docs/`, dan `.nojekyll`
+> di root mematikan Jekyll agar folder `_next` tidak dibuang.
+
+Snapshot bersifat read-only: tombol, filter, dan formulir tidak aktif — ada
+banner kecil di kiri bawah yang menjelaskan hal itu. Isi CRM direkam setelah
+login, jadi dashboard terlihat meski tanpa sesi.
+
+Membuat ulang snapshot setelah UI berubah:
+
+```bash
+npm run build
+npx next start -p 3000        # terminal lain
+npm run pages:build           # menulis ulang docs/
+```
+
+Env opsional: `SNAPSHOT_BASE_URL` (default `http://127.0.0.1:3000`),
+`SNAPSHOT_BASE_PATH` (hanya untuk tautan di `404.html`), `CRM_PASSCODE`.
+
+---
+
+## 6. Deploy
 
 Cocok untuk Vercel/Netlify. Tambahkan `DATABASE_URL`, `DIRECT_URL`, dan
 `CRM_PASSCODE` di environment variables hosting, lalu jalankan migration sekali
@@ -132,7 +176,7 @@ koneksi ke Google Fonts atau CDN eksternal saat build.
 
 ---
 
-## 6. Catatan keamanan
+## 7. Catatan keamanan
 
 - Repo ini **public**: jangan pernah commit `.env` (sudah di-gitignore).
 - `/crm` dilindungi passcode cookie sederhana (`CRM_PASSCODE`). Untuk produksi

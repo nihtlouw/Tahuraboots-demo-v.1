@@ -13,7 +13,8 @@
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
-    "db:check": "node scripts/db-check.mjs"
+    "db:check": "node scripts/db-check.mjs",
+    "pages:build": "node scripts/build-pages-snapshot.mjs"
   },
   "dependencies": {
     "dotenv": "17.3.1",
