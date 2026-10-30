@@ -59,24 +59,38 @@ otomatis lewat `ensureSeed()` di `src/db/seed.ts`.
 
 **Opsi C — GitHub Actions**
 
-Simpan `DATABASE_URL` di *Settings → Secrets and variables → Actions*, lalu
-jalankan langkah berikut pada runner:
+Workflow siap pakai: `.github/workflows/db-migrate.yml`.
 
-```yaml
-- run: npm ci
-- run: npm run db:migrate
-  env:
-    DATABASE_URL: ${{ secrets.DATABASE_URL }}
-    DIRECT_URL: ${{ secrets.DIRECT_URL }}
-```
+1. Buka repo → **Settings → Secrets and variables → Actions → New repository
+   secret**, tambahkan:
+   - `DATABASE_URL` → connection string pooled
+   - `DIRECT_URL` → connection string direct
+2. Buka tab **Actions** → pilih **Database Migration (Neon)** → **Run workflow**.
 
-Runner GitHub punya akses internet penuh, jadi bisa menjangkau Neon.
+Workflow menjalankan `npm ci`, `npm run db:migrate`, lalu `npm run db:check`
+(menampilkan daftar tabel + jumlah baris sebagai bukti). Runner GitHub punya
+akses internet penuh sehingga bisa menjangkau Neon, berbeda dengan sandbox
+agen.
 
 ## 4. Verifikasi
 
 ```bash
+npm run db:check                         # daftar tabel + jumlah baris
 curl http://localhost:3000/api/health    # {"ok":true} bila DB terhubung
 npm run db:studio                        # GUI untuk melihat tabel & data
+```
+
+Contoh keluaran `db:check`:
+
+```
+✓ Terhubung ke postgresql://neondb_owner:****@ep-...neon.tech/neondb
+  PostgreSQL 17.x ...
+  Tabel di schema public (4):
+   • leads               8 baris
+   • order_items        17 baris
+   • orders             15 baris
+   • products            8 baris
+✓ Skema lengkap. Aplikasi siap dipakai.
 ```
 
 ## 5. Deployment (Vercel / Netlify)

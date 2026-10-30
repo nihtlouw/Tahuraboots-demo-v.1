@@ -59,8 +59,14 @@ npm run db:migrate
 curl http://localhost:3000/api/health     # {"ok":true}
 ```
 
-Alternatif tanpa CLI: buka **Neon Console → SQL Editor**, tempel isi file
-`drizzle/0000_*.sql`, lalu Run.
+Alternatif tanpa CLI:
+
+- **Neon SQL Editor** — buka Neon Console → SQL Editor, tempel isi file
+  `drizzle/0000_*.sql`, lalu Run.
+- **GitHub Actions** — tambahkan secret `DATABASE_URL` & `DIRECT_URL` di
+  *Settings → Secrets and variables → Actions*, lalu jalankan workflow
+  **Database Migration (Neon)** dari tab Actions (butuh workflow ini sudah ada
+  di branch default).
 
 ---
 
@@ -111,6 +117,7 @@ public/fonts/                  # Inter + Fraunces (woff2, lokal)
 | `npm run db:migrate` | Terapkan migration ke database. |
 | `npm run db:push` | Sinkronkan skema langsung (prototyping). |
 | `npm run db:studio` | Drizzle Studio (GUI database). |
+| `npm run db:check` | Verifikasi koneksi + daftar tabel & jumlah baris. Exit code 1 kalau skema belum lengkap. |
 
 ---
 
