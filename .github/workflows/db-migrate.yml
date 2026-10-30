@@ -1,0 +1,51 @@
+name: Database Migration (Neon)
+
+# Terapkan skema ke Neon dari runner GitHub.
+#
+# Sebelum menjalankan:
+#   Settings → Secrets and variables → Actions → New repository secret
+#     DATABASE_URL = connection string pooled  (...-pooler...)
+#     DIRECT_URL   = connection string direct  (tanpa "-pooler")
+#
+# Lalu: Actions → "Database Migration (Neon)" → Run workflow.
+
+on:
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: "Catatan (opsional)"
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: db-migrate
+  cancel-in-progress: false
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Apply Drizzle migrations
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DIRECT_URL: ${{ secrets.DIRECT_URL }}
+        run: npm run db:migrate
+
+      - name: Verify schema
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DIRECT_URL: ${{ secrets.DIRECT_URL }}
+        run: npm run db:check

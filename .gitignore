@@ -1,0 +1,55 @@
+# ── Secrets / environment ────────────────────────────────────────────
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# ── Node / JS ────────────────────────────────────────────────────────
+node_modules/
+.pnpm-store/
+.yarn/cache
+next/.cache/
+.next/
+.nuxt/
+.output/
+.svelte-kit/
+dist/
+build/
+out/
+coverage/
+.turbo/
+.parcel-cache/
+.vite/
+.vercel/
+*.tsbuildinfo
+
+# ── PHP / Laravel (kalau project-nya PHP) ───────────────────────────
+vendor/
+storage/*.key
+storage/framework/cache/*
+storage/framework/sessions/*
+storage/framework/views/*
+bootstrap/cache/*
+.phpunit.result.cache
+
+# ── Python ──────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# ── Database dump / arsip lokal ─────────────────────────────────────
+*.sql.gz
+*.dump
+*.backup
+
+# ── OS / editor ─────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+.idea/
+*.swp
+*.log
