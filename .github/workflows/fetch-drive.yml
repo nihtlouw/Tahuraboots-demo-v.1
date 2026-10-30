@@ -1,8 +1,8 @@
 name: Fetch Drive Archive
 
-# Workflow sementara: dipakai agen untuk mengunduh file Google Drive
-# (runner GitHub punya akses internet penuh) dan menyimpannya sebagai artifact.
-# Hapus workflow ini setelah arsip berhasil diimpor ke repo.
+# Workflow sementara: runner GitHub mengunduh file Google Drive, mengekstrak,
+# lalu commit hasilnya ke branch ini supaya bisa diambil lewat git.
+# Hapus setelah arsip berhasil diimpor.
 
 on:
   push:
@@ -11,12 +11,17 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   fetch:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+
       - name: Install gdown
         run: pip install --quiet gdown
 
@@ -25,36 +30,41 @@ jobs:
           FILE_ID: 10d6x8rjkqrHxlFpy6kwAmkKiVSLamDhD
         run: |
           set -euo pipefail
-          mkdir -p out
-          gdown "https://drive.google.com/uc?id=${FILE_ID}" -O out/archive.bin \
-            || gdown --fuzzy "https://drive.google.com/file/d/${FILE_ID}/view" -O out/archive.bin
-          ls -la out
-          file out/archive.bin || true
-          echo "size: $(stat -c%s out/archive.bin) bytes"
+          mkdir -p _drive_tmp
+          gdown "https://drive.google.com/uc?id=${FILE_ID}" -O _drive_tmp/archive.bin \
+            || gdown --fuzzy "https://drive.google.com/file/d/${FILE_ID}/view" -O _drive_tmp/archive.bin
+          echo "size: $(stat -c%s _drive_tmp/archive.bin) bytes"
+          file _drive_tmp/archive.bin
 
-      - name: Identify & unpack
+      - name: Unpack
         run: |
           set -euo pipefail
-          mkdir -p out/extracted
-          if file out/archive.bin | grep -qi 'zip archive'; then
-            unzip -q -o out/archive.bin -d out/extracted
-          elif file out/archive.bin | grep -qi 'gzip compressed'; then
-            tar -xzf out/archive.bin -C out/extracted
-          elif file out/archive.bin | grep -qi 'RAR archive'; then
+          mkdir -p _drive_tmp/extracted
+          if file _drive_tmp/archive.bin | grep -qi 'zip archive'; then
+            unzip -q -o _drive_tmp/archive.bin -d _drive_tmp/extracted
+          elif file _drive_tmp/archive.bin | grep -qi 'gzip compressed'; then
+            tar -xzf _drive_tmp/archive.bin -C _drive_tmp/extracted
+          elif file _drive_tmp/archive.bin | grep -qi 'RAR archive'; then
             sudo apt-get update -qq && sudo apt-get install -y -qq unrar
-            unrar x -o+ out/archive.bin out/extracted/
+            unrar x -o+ _drive_tmp/archive.bin _drive_tmp/extracted/
           else
-            echo "Bukan arsip, salin apa adanya"
-            cp out/archive.bin out/extracted/archive.bin
+            cp _drive_tmp/archive.bin _drive_tmp/extracted/archive.bin
           fi
-          echo "--- isi arsip ---"
-          find out/extracted -maxdepth 3 | head -100
+          echo "--- struktur ---"
+          find _drive_tmp/extracted -maxdepth 3 | head -100
           echo "--- jumlah file ---"
-          find out/extracted -type f | wc -l
+          find _drive_tmp/extracted -type f | wc -l
+          echo "--- ukuran total ---"
+          du -sh _drive_tmp/extracted
 
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: drive-archive
-          path: out/
-          retention-days: 3
+      - name: Commit hasil ke branch
+        run: |
+          set -euo pipefail
+          rm -rf _import
+          mkdir -p _import
+          cp -a _drive_tmp/extracted/. _import/
+          git config user.name "arena-import-bot"
+          git config user.email "agent@arena.ai"
+          git add -A _import
+          git commit -m "chore(import): unggah arsip dari Google Drive" || echo "tidak ada perubahan"
+          git push origin HEAD:${{ github.ref_name }}
