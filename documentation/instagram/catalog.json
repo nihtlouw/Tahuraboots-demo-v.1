@@ -1,0 +1,655 @@
+{
+  "source": {
+    "account": "@tahurabootsco",
+    "profile": "https://www.instagram.com/tahurabootsco/",
+    "method": "24 ubin grid profil diambil dari dua tangkapan layar pengguna, lalu dipotong satu per satu pada resolusi aslinya (381x507 px per postingan).",
+    "downloadedFromInstagram": false,
+    "note": "Berkas di tiles/ adalah foto IG yang sama, dipotong dari tangkapan layar. Unduhan langsung dari Instagram tidak bisa dilakukan dari sandbox ini (instagram.com menolak koneksi)."
+  },
+  "stats": {
+    "posts": 24,
+    "studioPairs": 23,
+    "lifestylePairs": 2,
+    "totalPairs": 25,
+    "totalShoes": 50,
+    "families": {
+      "Chelsea": 2,
+      "Service & hiking lace-up": 5,
+      "Chukka & derby": 5,
+      "Mountain / alpine": 2,
+      "Strap & jodhpur ankle": 3,
+      "Canvas & wedge": 2,
+      "Lifestyle": 1,
+      "Western": 2,
+      "Engineer": 2
+    }
+  },
+  "items": [
+    {
+      "code": "TB-01",
+      "file": "tiles/P01_s1r1c1.jpg",
+      "name": "Chelsea Pull-Up Cognac",
+      "archetype": "Chelsea",
+      "family": "Chelsea",
+      "height": "5,5 inci (pergelangan)",
+      "leather": "Sapi pull-up halus, kilap sedang, warna cokelat karamel dengan gradasi lebih gelap di bagian tekuk",
+      "colour": "Cognac / cokelat kayu manis",
+      "sole": "Sol karet hitam berprofil tebal (cup sole) dengan tepi membulat",
+      "construction": "Jahitan welt tidak menonjol; tampak konstruksi welt datar dengan midsole karet",
+      "detail": [
+        "Elastis samping (gore) lebar khas Chelsea",
+        "Toe bulat (round toe), tanpa toe cap",
+        "Tanpa tali, tanpa resleting",
+        "Sol dan welt berwarna hitam, kontras dengan upper"
+      ],
+      "use": "Sepatu harian paling aman untuk pasar luas; cocok untuk katalog entry-level.",
+      "tags": [
+        "chelsea",
+        "pull-up",
+        "round-toe",
+        "karet"
+      ],
+      "priceIdr": 2450000
+    },
+    {
+      "code": "TB-02",
+      "file": "tiles/P02_s1r1c2.jpg",
+      "name": "Lace-Up Shrunken Waxed Flesh",
+      "archetype": "Tall lace-up (monkey/work)",
+      "family": "Service & hiking lace-up",
+      "height": "7 inci",
+      "leather": "Kulit sapi bertekstur retak/keriput (shrunken atau waxed flesh) warna abu-cokelat",
+      "colour": "Taupe gelap / cocoa abu",
+      "sole": "Outsole karet hitam ber-tread dengan blok tumit; welt kulit cokelat dengan dua baris jahitan",
+      "construction": "Welt kulit terlihat menonjol dengan jahitan ganda - ciri welt konstruksi tangan",
+      "detail": [
+        "12+ lubang tali (eyelets) sampai pergelangan",
+        "Toe bulat dengan sedikit toe bump",
+        "Panel samping satu potong, jahitan punggung di belakang",
+        "Tepi sol diberi wax/edge dressing cokelat"
+      ],
+      "use": "Silhouette workwear yang sedang naik; kuat untuk konten 'patina progression'.",
+      "tags": [
+        "lace-up",
+        "waxed-flesh",
+        "workwear",
+        "welt-kulit"
+      ],
+      "priceIdr": 3350000
+    },
+    {
+      "code": "TB-03",
+      "file": "tiles/P03_s1r1c3.jpg",
+      "name": "Chelsea Commando Black",
+      "archetype": "Chelsea",
+      "family": "Chelsea",
+      "height": "6 inci",
+      "leather": "Sapi halus warna hitam, kilap rendah, sedikit crease di punggung kaki",
+      "colour": "Hitam",
+      "sole": "Outsole karet hitam bergerigi (commando) dengan tumit terpisah",
+      "construction": "Welt datar; tepi sol gelap menyatu dengan upper",
+      "detail": [
+        "Elastis samping sempit dan tinggi",
+        "Pull tab kecil di belakang",
+        "Toe bulat agak ringan (almond)",
+        "Sol jauh lebih chunky dibanding TB-01"
+      ],
+      "use": "Versi 'tough' dari Chelsea - laku untuk segmen musisi/kota.",
+      "tags": [
+        "chelsea",
+        "commando",
+        "hitam",
+        "chunky"
+      ],
+      "priceIdr": 2650000
+    },
+    {
+      "code": "TB-04",
+      "file": "tiles/P04_s1r2c1.jpg",
+      "name": "Chukka Crackled Dark Brown",
+      "archetype": "Chukka",
+      "family": "Chukka & derby",
+      "height": "4,5 inci",
+      "leather": "Kulit bertekstur retak halus (crackled / shrunken grain), cokelat tua kehitaman",
+      "colour": "Espresso",
+      "sole": "Sol kulit tipis dengan tumit kecil bertumpuk; tanpa profil karet",
+      "construction": "Welt datar tipis, jahitan rapat di sekeliling sol",
+      "detail": [
+        "3-4 pasang lubang tali",
+        "Tanpa toe cap, potongan derby terbuka",
+        "Lining terang (tan) terlihat di mulut sepatu",
+        "Silhouette ramping, cocok formal-kasual"
+      ],
+      "use": "Produk 'smart casual' - titik masuk untuk pembeli pertama.",
+      "tags": [
+        "chukka",
+        "crackled",
+        "kulit-sole",
+        "formal"
+      ],
+      "priceIdr": 2300000
+    },
+    {
+      "code": "TB-05",
+      "file": "tiles/P05_s1r2c2.jpg",
+      "name": "Mountain Boot Two-Tone Tan",
+      "archetype": "Mountain / alpine",
+      "family": "Mountain / alpine",
+      "height": "6,5 inci",
+      "leather": "Dua bahan: kulit sapi cokelat di vamp/toe dan suede tan di shaft serta collar empuk",
+      "colour": "Cokelat tua + tan",
+      "sole": "Outsole karet hitam bergerigi dalam (logger/commando) dengan welt kulit tebal",
+      "construction": "Welt kulit dengan jahitan ganda; tepi midsole menonjol khas sepatu gunung",
+      "detail": [
+        "Hardware D-ring dan speed hook",
+        "Collar empuk (padded) warna tan",
+        "Toe cap halus dengan jahitan melintang",
+        "Tali kulit tebal warna cokelat"
+      ],
+      "use": "Statement piece - visual paling 'outdoor premium' di grid.",
+      "tags": [
+        "mountain",
+        "two-tone",
+        "suede",
+        "d-ring",
+        "commando"
+      ],
+      "priceIdr": 3850000
+    },
+    {
+      "code": "TB-06",
+      "file": "tiles/P06_s1r2c3.jpg",
+      "name": "Strap Ankle Boot Black Brass",
+      "archetype": "Strap / jodhpur ankle",
+      "family": "Strap & jodhpur ankle",
+      "height": "6 inci",
+      "leather": "Sapi halus warna hitam, kilap sedang, crease halus di punggung kaki",
+      "colour": "Hitam",
+      "sole": "Sol karet hitam tipis dengan tepi rata, tanpa tumit tinggi",
+      "construction": "Welt datar; jahitan sol nyaris tidak terlihat",
+      "detail": [
+        "Satu strap pergelangan dengan buckle kuningan",
+        "Toe almond memanjang",
+        "Tanpa tali, tanpa elastis",
+        "Shaft lurus dengan top line terbuka"
+      ],
+      "use": "Silhouette fashion-forward; cocok untuk kampanye 'boots that dress up'.",
+      "tags": [
+        "strap",
+        "buckle",
+        "almond-toe",
+        "hitam"
+      ],
+      "priceIdr": 2750000
+    },
+    {
+      "code": "TB-07",
+      "file": "tiles/P07_s1r3c1.jpg",
+      "name": "Tall Canvas-Shaft Lace Boot",
+      "archetype": "Tall lace-up (canvas shaft)",
+      "family": "Canvas & wedge",
+      "height": "8,5-9 inci",
+      "leather": "Kulit cokelat di vamp dan toe; shaft dari kanvas/twill abu gelap dengan pipa kulit",
+      "colour": "Cokelat + abu arang",
+      "sole": "Wedge karet hitam rata dengan tepi kulit cokelat",
+      "construction": "Welt datar; jahitan tepi sol terlihat rapi satu baris",
+      "detail": [
+        "Tali dari kaki sampai atas shaft",
+        "Resleting di punggung untuk masuk-keluar",
+        "Toe cap kulit dengan jahitan melintang",
+        "Kontras bahan kulit vs tekstil"
+      ],
+      "use": "Paling 'editorial' dari semua item; bagus untuk reels styling.",
+      "tags": [
+        "tall",
+        "canvas",
+        "zipper",
+        "wedge"
+      ],
+      "priceIdr": 3150000
+    },
+    {
+      "code": "TB-08",
+      "file": "tiles/P08_s1r3c2.jpg",
+      "name": "Service Boot Plain Toe Olive Brown",
+      "archetype": "Service boot",
+      "family": "Service & hiking lace-up",
+      "height": "5,5 inci",
+      "leather": "Sapi halus berwarna cokelat zaitun dengan patina terang di toe",
+      "colour": "Olive brown",
+      "sole": "Outsole karet hitam bergerigi dengan tumit rendah",
+      "construction": "Welt datar dengan jahitan tepi ganda tipis",
+      "detail": [
+        "8 pasang lubang tali",
+        "Tanpa toe cap (plain toe)",
+        "Jahitan counter tumit melintang",
+        "Tali kulit tipis warna senada"
+      ],
+      "use": "Rotasi harian pria kantor-kreatif; paling mudah dijual ulang.",
+      "tags": [
+        "service-boot",
+        "plain-toe",
+        "olive",
+        "harian"
+      ],
+      "priceIdr": 2950000
+    },
+    {
+      "code": "TB-09",
+      "file": "tiles/P09_s1r3c3.jpg",
+      "name": "Buckled Gaucho Ankle Cognac",
+      "archetype": "Strap / gaucho ankle",
+      "family": "Strap & jodhpur ankle",
+      "height": "7 inci",
+      "leather": "Kulit sapi pull-up cognac dengan glaze tinggi dan grain terlihat",
+      "colour": "Cognac / tan",
+      "sole": "Sol kulit dengan tumit bertumpuk (stacked heel), tepi sol dipoles",
+      "construction": "Welt datar tipis khas sepatu formal",
+      "detail": [
+        "Satu strap dengan buckle kuningan",
+        "Mulut shaft terbuka dengan lining terang",
+        "Toe almond memanjang, siluet 70-an",
+        "Tanpa tali"
+      ],
+      "use": "Produk niche dengan daya tarik fashion kuat; cocok untuk foto editorial.",
+      "tags": [
+        "gaucho",
+        "buckle",
+        "stacked-heel",
+        "cognac"
+      ],
+      "priceIdr": 3050000
+    },
+    {
+      "code": "TB-10",
+      "file": "tiles/P10_s1r4c1.jpg",
+      "name": "Chukka Grey Melange Suede",
+      "archetype": "Chukka",
+      "family": "Chukka & derby",
+      "height": "4 inci",
+      "leather": "Suede/nubuck abu dengan serat 'shrunken' dan warna tidak rata (melange)",
+      "colour": "Abu terang",
+      "sole": "Sol kulit natural/krem tipis dengan outsole gelap",
+      "construction": "Welt datar tipis, jahitan halus",
+      "detail": [
+        "4 pasang lubang tali",
+        "Tanpa toe cap",
+        "Profil rendah dan ringan",
+        "Grain keriput - ciri leather shrunken"
+      ],
+      "use": "Summer/spring look; harga bahan lebih murah, margin lebih baik.",
+      "tags": [
+        "chukka",
+        "suede",
+        "abu",
+        "kulit-sole"
+      ],
+      "priceIdr": 2250000
+    },
+    {
+      "code": "TB-11",
+      "file": "tiles/P11_s1r4c2.jpg",
+      "name": "Lace-Up Derby Grey Speckled",
+      "archetype": "Derby / lace-up rendah",
+      "family": "Chukka & derby",
+      "height": "5 inci",
+      "leather": "Kulit sapi tekstur marmer/berbintik (shrunken grain) abu-cokelat pucat",
+      "colour": "Taupe kelabu bertotol",
+      "sole": "Midsole kulit natural + outsole karet gelap tipis, tumit blok rendah",
+      "construction": "Welt kulit dengan jahitan kontras putih di sepanjang tepi",
+      "detail": [
+        "Enam pasang lubang tali, model derby terbuka",
+        "Jahitan dekoratif putih mengikuti panel toe",
+        "Toe bulat dengan sedikit bumper",
+        "Tepi midsole pucat - kontras paling terang di grid"
+      ],
+      "use": "Item paling 'collector' karena tekstur kulitnya; bagus untuk konten close-up grain.",
+      "tags": [
+        "derby",
+        "shrunken-grain",
+        "jahitan-kontras",
+        "kulit-sole"
+      ],
+      "priceIdr": 2750000
+    },
+    {
+      "code": "TB-12",
+      "file": "tiles/P12_s1r4c3.jpg",
+      "name": "Two-Tone Wedge Embossed",
+      "archetype": "Wedge / work-oxy",
+      "family": "Canvas & wedge",
+      "height": "4,5 inci",
+      "leather": "Dua bahan: kulit sapi cokelat tua di vamp dan heel, serta kulit emboss bergambar (motif burung/daun) di shaft",
+      "colour": "Cokelat tua + tan emboss",
+      "sole": "Wedge kulit tebal dengan gigi-gigi di tepi (outsole karet bergerigi)",
+      "construction": "Jahitan tepi sol kontras dan jahitan dekoratif di panel",
+      "detail": [
+        "Motif emboss dekoratif di panel atas",
+        "Toe bulat dengan bumper kulit",
+        "Sol wedge dua lapis dengan tepi bergerigi",
+        "Lining terang terlihat di mulut"
+      ],
+      "use": "Paling custom dari seri studio; bagus untuk menonjolkan layanan MTO.",
+      "tags": [
+        "wedge",
+        "two-tone",
+        "emboss",
+        "custom"
+      ],
+      "priceIdr": 3450000
+    },
+    {
+      "code": "TB-13",
+      "file": "tiles/P13_s2r1c1.jpg",
+      "name": "Chelsea di Alam (foto lifestyle)",
+      "archetype": "Lifestyle / Chelsea + sandal",
+      "family": "Lifestyle",
+      "height": "5,5 inci (Chelsea)",
+      "leather": "Chelsea pull-up cokelat (mirip TB-01); sandal kulit burgundy dengan tali anyaman",
+      "colour": "Cognac + burgundy",
+      "sole": "Chelsea bersol karet gelap; sandal bersol tipis",
+      "construction": "Tidak terlihat detail - foto dari jauh",
+      "detail": [
+        "Dua orang: satu memakai Chelsea, satu memakai sandal kulit",
+        "Latar batu vulkanik hijau - konten outdoor",
+        "Sepatu terlihat sudah dipakai (ada crease dan debu)",
+        "Satu-satunya foto non-studio di grid"
+      ],
+      "use": "Bukti 'real world wear' - wajib dipakai di halaman testimoni.",
+      "tags": [
+        "lifestyle",
+        "outdoor",
+        "chelsea",
+        "sandal"
+      ],
+      "priceIdr": 0,
+      "notForSale": true
+    },
+    {
+      "code": "TB-14",
+      "file": "tiles/P14_s2r1c2.jpg",
+      "name": "Western Boot Eagle Stitch Tan",
+      "archetype": "Western",
+      "family": "Western",
+      "height": "11 inci (shaft tinggi)",
+      "leather": "Sapi oiled tan-oranye dengan kilap hangat",
+      "colour": "Tan / oranye tembakau",
+      "sole": "Sol kulit dengan tumit cuban bertumpuk",
+      "construction": "Welt datar; shaft dijahit ke vamp dengan jahitan dekoratif",
+      "detail": [
+        "Bordir motif elang/sayap di shaft",
+        "Toe snip/pointed",
+        "Pull strap di sisi shaft",
+        "Tumit cuban khas western"
+      ],
+      "use": "Line paling 'statement'; pasar kolektor dan konten festival.",
+      "tags": [
+        "western",
+        "bordir",
+        "cuban-heel",
+        "snip-toe"
+      ],
+      "priceIdr": 4150000
+    },
+    {
+      "code": "TB-15",
+      "file": "tiles/P15_s2r1c3.jpg",
+      "name": "Suede Derby Mustard",
+      "archetype": "Derby / chukka tinggi",
+      "family": "Chukka & derby",
+      "height": "5 inci",
+      "leather": "Suede kuning mustard dengan serat rapi dan warna rata",
+      "colour": "Mustard / kuning tua",
+      "sole": "Sol kulit natural tipis, outsole gelap",
+      "construction": "Welt datar tipis dengan jahitan rapat",
+      "detail": [
+        "6 pasang lubang tali",
+        "Tanpa toe cap, potongan derby terbuka",
+        "Toe agak memanjang (almond)",
+        "Kontras suede cerah vs sol pucat"
+      ],
+      "use": "Warna paling mudah viral di feed; cocok untuk kampanye seasonal.",
+      "tags": [
+        "suede",
+        "mustard",
+        "derby",
+        "kulit-sole"
+      ],
+      "priceIdr": 2350000
+    },
+    {
+      "code": "TB-16",
+      "file": "tiles/P16_s2r2c1.jpg",
+      "name": "Lace-Up Ankle Greige Suede",
+      "archetype": "Lace-up ankle (jodhpur hybrid)",
+      "family": "Chukka & derby",
+      "height": "5,5 inci",
+      "leather": "Suede greige/beige dengan texture halus",
+      "colour": "Greige / beige",
+      "sole": "Midsole kulit cokelat + outsole karet hitam tipis",
+      "construction": "Welt datar dengan jahitan tepi terlihat",
+      "detail": [
+        "10 pasang lubang tali sampai atas",
+        "Tanpa toe cap",
+        "Bentuk shaft lurus seperti jodhpur",
+        "Sol dua lapis (kulit + karet)"
+      ],
+      "use": "Versi 'quiet luxury' - netral, mudah dipadukan.",
+      "tags": [
+        "suede",
+        "beige",
+        "lace-up",
+        "minimalis"
+      ],
+      "priceIdr": 2550000
+    },
+    {
+      "code": "TB-17",
+      "file": "tiles/P17_s2r2c2.jpg",
+      "name": "Strap Ankle Oxblood Gloss",
+      "archetype": "Strap ankle boot",
+      "family": "Strap & jodhpur ankle",
+      "height": "6 inci",
+      "leather": "Sapi halus burgundy/oxblood dengan kilap tinggi (spit shine)",
+      "colour": "Oxblood / burgundi",
+      "sole": "Midsole kulit cokelat + outsole karet hitam, tumit rendah",
+      "construction": "Welt datar dengan jahitan kontras di tepi midsole",
+      "detail": [
+        "Satu strap pergelangan dengan buckle kuningan",
+        "Toe agak pointy, siluet ramping",
+        "Tanpa tali",
+        "Finish mengilap - beda dari TB-06 yang doff"
+      ],
+      "use": "Warna oxblood selalu punya pembeli; cocok untuk edisi terbatas.",
+      "tags": [
+        "strap",
+        "oxblood",
+        "gloss",
+        "almond-toe"
+      ],
+      "priceIdr": 2850000
+    },
+    {
+      "code": "TB-18",
+      "file": "tiles/P18_s2r2c3.jpg",
+      "name": "Engineer Double Strap Black",
+      "archetype": "Engineer / harness",
+      "family": "Engineer",
+      "height": "8 inci",
+      "leather": "Sapi hitam berkilap dengan crease lebar di punggung kaki",
+      "colour": "Hitam",
+      "sole": "Sol karet hitam tipis dengan tumit blok berlapis (wood-look)",
+      "construction": "Welt datar; jahitan tepi sol rapi satu baris",
+      "detail": [
+        "Dua strap lebar dengan buckle perak",
+        "Top line terbuka tanpa tali",
+        "Siluet biker klasik",
+        "Shaft tinggi sampai betis bawah"
+      ],
+      "use": "Ikon biker; basis penggemar kuat dan mudah di-upsell jadi MTO.",
+      "tags": [
+        "engineer",
+        "biker",
+        "double-strap",
+        "hitam"
+      ],
+      "priceIdr": 3550000
+    },
+    {
+      "code": "TB-19",
+      "file": "tiles/P19_s2r3c1.jpg",
+      "name": "Custom Western Smiley Black",
+      "archetype": "Custom western",
+      "family": "Western",
+      "height": "11 inci",
+      "leather": "Sapi hitam untuk shaft dan vamp, dengan bordir warna-warni dan stud kuningan",
+      "colour": "Hitam + aksen warna",
+      "sole": "Sol kulit dengan tumit bertumpuk",
+      "construction": "Welt datar; jahitan dekoratif warna kontras",
+      "detail": [
+        "Stud kuningan berbentuk smiley di kedua shaft",
+        "Bordir floral/flame colorful",
+        "Pull hole di mulut shaft",
+        "Toe snip dengan edge dressing terang"
+      ],
+      "use": "Satu-satunya custom art piece - bukti layanan custom design.",
+      "tags": [
+        "custom",
+        "western",
+        "stud",
+        "bordir"
+      ],
+      "priceIdr": 4450000
+    },
+    {
+      "code": "TB-20",
+      "file": "tiles/P20_s2r3c2.jpg",
+      "name": "Norwegian Welt Olive Commando",
+      "archetype": "Service / hiking",
+      "family": "Service & hiking lace-up",
+      "height": "6 inci",
+      "leather": "Sapi pull-up olive/military green dengan burnish di toe",
+      "colour": "Olive",
+      "sole": "Midsole kulit natural + outsole karet commando bergerigi dalam",
+      "construction": "Jahitan welt ganda (Norwegian storm welt) terlihat jelas di tepi sol",
+      "detail": [
+        "Toe cap dengan jahitan melintang",
+        "Jahitan dekoratif di panel samping",
+        "Tali kulit gelap 8 pasang",
+        "Tumit rendah dengan top piece karet"
+      ],
+      "use": "Item paling 'craft' - tunjukkan foto makro welt untuk jualan.",
+      "tags": [
+        "norwegian-welt",
+        "olive",
+        "commando",
+        "toe-cap"
+      ],
+      "priceIdr": 3650000
+    },
+    {
+      "code": "TB-21",
+      "file": "tiles/P21_s2r3c3.jpg",
+      "name": "Hiking Lace-Up Charcoal Olive",
+      "archetype": "Service / hiking",
+      "family": "Service & hiking lace-up",
+      "height": "7 inci",
+      "leather": "Sapi halus abu-olive gelap dengan patina",
+      "colour": "Charcoal olive",
+      "sole": "Midsole kulit natural + outsole karet hitam bergerigi",
+      "construction": "Welt ganda dengan jahitan kontras terang",
+      "detail": [
+        "Jumlah lubang tali banyak (10+)",
+        "Tanpa toe cap, jahitan samping dekoratif",
+        "Siluet ramping dibanding TB-20",
+        "Sol dua warna (kulit + karet)"
+      ],
+      "use": "Alternatif lebih ringan dari TB-20 untuk pemakaian harian.",
+      "tags": [
+        "hiking",
+        "olive",
+        "welt-ganda",
+        "lace-up"
+      ],
+      "priceIdr": 3450000
+    },
+    {
+      "code": "TB-22",
+      "file": "tiles/P22_s2r4c1.jpg",
+      "name": "Logger Tall Contrast Stitch",
+      "archetype": "Logger / tall lace-up",
+      "family": "Service & hiking lace-up",
+      "height": "9 inci",
+      "leather": "Sapi cokelat tua berminyak (oiled) dengan patina terang di toe",
+      "colour": "Dark brown",
+      "sole": "Wedge kulit penuh dengan outsole karet",
+      "construction": "Jahitan kontras terang di sepanjang welt dan shaft",
+      "detail": [
+        "Lubang tali banyak sampai atas shaft",
+        "Toe bulat dengan bumper",
+        "Jahitan dekoratif membentuk panel di punggung",
+        "Tumit wedge rendah"
+      ],
+      "use": "Item 'heritage' paling tebal; cocok untuk konten proses jahit.",
+      "tags": [
+        "logger",
+        "tall",
+        "kontras-jahitan",
+        "wedge"
+      ],
+      "priceIdr": 3750000
+    },
+    {
+      "code": "TB-23",
+      "file": "tiles/P23_s2r4c2.jpg",
+      "name": "Mountain Boot Burgundy Padded",
+      "archetype": "Mountain / alpine",
+      "family": "Mountain / alpine",
+      "height": "6,5 inci",
+      "leather": "Sapi burgundy kemerahan berkilap; collar tan empuk",
+      "colour": "Burgundy / oxblood",
+      "sole": "Outsole karet hitam tebal bergerigi + welt kulit",
+      "construction": "Welt kulit dengan jahitan ganda",
+      "detail": [
+        "Hardware D-ring/logam di sepanjang shaft",
+        "Collar empuk warna tan",
+        "Many eyelets dengan tali kulit",
+        "Toe bulat, silhouette gemuk"
+      ],
+      "use": "Saudara TB-05 dalam warna berani; pakai untuk kampanye warna.",
+      "tags": [
+        "mountain",
+        "burgundy",
+        "padded",
+        "d-ring"
+      ],
+      "priceIdr": 3950000
+    },
+    {
+      "code": "TB-24",
+      "file": "tiles/P24_s2r4c3.jpg",
+      "name": "Engineer Buckle Black (mid-calf)",
+      "archetype": "Engineer / harness",
+      "family": "Engineer",
+      "height": "8,5 inci",
+      "leather": "Sapi hitam berkilap dengan crease dalam",
+      "colour": "Hitam",
+      "sole": "Sol karet hitam dengan tepi midsole terang (kontras)",
+      "construction": "Welt datar; jahitan midsole terang terlihat jelas",
+      "detail": [
+        "Dua strap lebar dengan buckle metal di sisi luar",
+        "Mulut shaft dilipat (cuff) dengan lining terang",
+        "Jahitan welt kontras terang di tepi sol",
+        "Tumit blok rendah dengan top piece karet"
+      ],
+      "use": "Versi lebih 'dressy' dari TB-18 - lining terang jadi nilai jual.",
+      "tags": [
+        "engineer",
+        "buckle",
+        "hitam",
+        "mid-calf"
+      ],
+      "priceIdr": 3650000
+    }
+  ]
+}
