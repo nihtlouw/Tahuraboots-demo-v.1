@@ -19,8 +19,8 @@ export default function GlobalError({
   }, [error]);
 
   return (
-    <div className="min-h-screen bg-ink text-paper">
-      <div className="container-x flex min-h-screen flex-col items-center justify-center gap-5 text-center">
+    <div className="min-h-dvh bg-ink text-paper">
+      <div className="container-x flex min-h-dvh flex-col items-center justify-center gap-5 text-center">
         <p className="text-[0.6rem] uppercase tracking-[0.28em] text-brass">
           Something slipped at the bench
         </p>

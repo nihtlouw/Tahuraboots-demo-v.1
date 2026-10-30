@@ -113,7 +113,7 @@ export function Collection({ products }: { products: CollectionProduct[] }) {
         />
 
         <div className="mt-8 flex flex-wrap items-center justify-between gap-4">
-          <div className="hide-scrollbar flex w-full gap-2 overflow-x-auto sm:w-auto">
+          <div className="hide-scrollbar snap-row flex w-full gap-2 overflow-x-auto pb-1 sm:w-auto sm:pb-0">
             {filters.map((item) => {
               const count = counted[item.id] ?? 0;
               const isActive = filter === item.id;
@@ -122,7 +122,7 @@ export function Collection({ products }: { products: CollectionProduct[] }) {
                   key={item.id}
                   type="button"
                   onClick={() => setFilter(item.id)}
-                  className={`flex shrink-0 items-center gap-2 border px-4 py-2.5 text-[0.62rem] font-semibold uppercase tracking-[0.16em] transition-all ${
+                  className={`flex min-h-11 shrink-0 items-center gap-2 border px-4 py-2.5 text-[0.62rem] font-semibold uppercase tracking-[0.16em] transition-all active:opacity-80 ${
                     isActive
                       ? "border-brass bg-brass text-ink"
                       : "border-line text-paper/60 hover:border-line-soft hover:text-paper"
@@ -138,17 +138,19 @@ export function Collection({ products }: { products: CollectionProduct[] }) {
               );
             })}
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex w-full items-center gap-2 sm:w-auto sm:gap-3">
             <label className="sr-only" htmlFor="collection-search">
               Search the collection
             </label>
             <input
               id="collection-search"
               type="search"
+              enterKeyHint="search"
+              autoCapitalize="none"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               placeholder="Search model, leather…"
-              className="w-44 border border-line bg-transparent px-3 py-2 text-[0.7rem] text-paper outline-none transition-colors placeholder:text-mute/60 focus:border-brass sm:w-56"
+              className="h-11 min-w-0 flex-1 border border-line bg-transparent px-3 text-base text-paper outline-none transition-colors placeholder:text-mute/60 focus:border-brass sm:h-auto sm:w-56 sm:flex-none sm:py-2 sm:text-[0.7rem]"
             />
             <label className="sr-only" htmlFor="collection-sort">
               Sort styles
@@ -157,7 +159,7 @@ export function Collection({ products }: { products: CollectionProduct[] }) {
               id="collection-sort"
               value={sort}
               onChange={(event) => setSort(event.target.value as SortKey)}
-              className="border border-line bg-ink px-3 py-2 text-[0.66rem] uppercase tracking-[0.12em] text-paper/75 outline-none transition-colors focus:border-brass"
+              className="h-11 shrink-0 border border-line bg-ink px-3 text-base uppercase tracking-[0.12em] text-paper/75 outline-none transition-colors focus:border-brass sm:h-auto sm:py-2 sm:text-[0.66rem]"
             >
               {sorts.map((option) => (
                 <option key={option.id} value={option.id}>
@@ -181,14 +183,14 @@ export function Collection({ products }: { products: CollectionProduct[] }) {
                 setFilter("all");
                 setSort("featured");
               }}
-              className="text-[0.6rem] uppercase tracking-[0.16em] text-brass underline-offset-4 hover:underline"
+              className="tap-40 flex items-center px-1 text-[0.62rem] uppercase tracking-[0.16em] text-brass underline-offset-4 hover:underline"
             >
               Reset view
             </button>
           )}
         </div>
 
-        <div className="mt-8 grid gap-x-5 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-7 grid gap-x-5 gap-y-9 sm:mt-8 sm:grid-cols-2 sm:gap-y-10 lg:grid-cols-3">
           {visible.map((product, index) => {
             const availability = resolveAvailability(product);
             const meta = availabilityCopy[availability];
@@ -240,7 +242,7 @@ export function Collection({ products }: { products: CollectionProduct[] }) {
                       <span className="text-[0.58rem] uppercase tracking-[0.2em] text-paper/60">
                         {product.collectionName}
                       </span>
-                      <span className="flex h-8 w-8 translate-y-2 items-center justify-center border border-paper/30 text-paper opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
+                      <span className="flex h-9 w-9 items-center justify-center border border-paper/30 text-paper opacity-100 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100 sm:translate-y-2 sm:opacity-0">
                         ↗
                       </span>
                     </div>

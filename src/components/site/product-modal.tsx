@@ -121,20 +121,20 @@ export function ProductModal({ product, onClose }: Props) {
       <div
         ref={panelRef}
         tabIndex={-1}
-        className="animate-rise relative max-h-[92vh] w-full max-w-4xl overflow-y-auto border border-line bg-ink-2 outline-none"
+        className="animate-rise relative max-h-[92dvh] w-full max-w-4xl overflow-y-auto overscroll-contain rounded-t-2xl border border-line bg-ink-2 outline-none sm:rounded-none"
         onClick={(event) => event.stopPropagation()}
       >
         <button
           type="button"
           onClick={onClose}
           aria-label="Close product details"
-          className="absolute right-3 top-3 z-10 flex h-10 w-10 items-center justify-center border border-paper/25 bg-ink/70 text-paper transition-colors hover:border-brass hover:text-brass"
+          className="absolute right-2.5 top-2.5 z-20 flex h-11 w-11 items-center justify-center rounded-full border border-paper/25 bg-ink/80 text-paper backdrop-blur-md transition-colors hover:border-brass hover:text-brass active:bg-ink"
         >
           ✕
         </button>
 
         <div className="grid md:grid-cols-2">
-          <div className="relative aspect-[4/5] w-full md:aspect-auto md:min-h-[560px]">
+          <div className="relative aspect-[5/4] w-full sm:aspect-[4/3] md:aspect-auto md:min-h-[560px]">
             <Image
               src={product.imageUrl}
               alt={`${product.name} in ${product.colorway}`}
@@ -151,7 +151,7 @@ export function ProductModal({ product, onClose }: Props) {
             </div>
           </div>
 
-          <div className="p-6 sm:p-8">
+          <div className="px-5 pb-6 pt-5 sm:p-8">
             <p className="text-[0.58rem] uppercase tracking-[0.24em] text-brass">
               {product.collectionName} · {product.model}
             </p>
@@ -197,7 +197,7 @@ export function ProductModal({ product, onClose }: Props) {
                       type="button"
                       onClick={() => setSize(item)}
                       aria-pressed={active}
-                      className={`flex h-9 min-w-12 items-center justify-center border px-2 text-[0.72rem] transition-colors ${
+                      className={`flex h-11 min-w-11 items-center justify-center border px-2 text-[0.78rem] transition-colors ${
                         active
                           ? "border-brass bg-brass text-ink"
                           : unavailable
@@ -249,16 +249,20 @@ export function ProductModal({ product, onClose }: Props) {
                       <input
                         id="waitlist-email"
                         type="email"
+                        inputMode="email"
+                        autoComplete="email"
+                        autoCapitalize="none"
+                        enterKeyHint="send"
                         required
                         value={email}
                         onChange={(event) => setEmail(event.target.value)}
                         placeholder="you@example.com"
-                        className="min-w-0 flex-1 border border-line bg-transparent px-3 py-3 text-[0.8rem] text-paper outline-none placeholder:text-mute/60 focus:border-brass"
+                        className="min-w-0 flex-1 border border-line bg-transparent px-3 py-3 text-base text-paper outline-none placeholder:text-mute/60 focus:border-brass sm:text-[0.8rem]"
                       />
                       <button
                         type="submit"
                         disabled={waitlist.kind === "sending"}
-                        className="shrink-0 bg-brass px-4 text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-ink transition-colors hover:bg-brass-light disabled:cursor-wait disabled:opacity-60"
+                        className="tap-44 shrink-0 bg-brass px-4 text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-ink transition-colors hover:bg-brass-light active:bg-brass disabled:cursor-wait disabled:opacity-60"
                       >
                         {waitlist.kind === "sending" ? "…" : "Notify me"}
                       </button>
@@ -273,7 +277,7 @@ export function ProductModal({ product, onClose }: Props) {
               </div>
             ) : null}
 
-            <div className="mt-6 flex flex-col gap-2.5">
+            <div className="mt-6 flex flex-col gap-2.5 max-md:hidden">
               <a
                 href={`https://wa.me/${site.whatsapp}?text=${inquiry}`}
                 target="_blank"
@@ -301,6 +305,39 @@ export function ProductModal({ product, onClose }: Props) {
                 <span>↗</span>
               </a>
             </div>
+          </div>
+        </div>
+
+        {/* Ponsel: CTA utama menempel di bawah supaya tidak perlu menggulir
+            seluruh deskripsi sebelum bisa memesan. */}
+        <div className="sticky bottom-0 z-10 border-t border-line bg-ink-2/95 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom,0px))] backdrop-blur-md md:hidden">
+          <div className="flex gap-2">
+            <a
+              href={`https://wa.me/${site.whatsapp}?text=${inquiry}`}
+              target="_blank"
+              rel="noreferrer"
+              onClick={onClose}
+              className="tap-44 flex flex-1 items-center justify-between gap-2 bg-brass px-4 text-[0.64rem] font-semibold uppercase tracking-[0.14em] text-ink active:bg-brass-light"
+            >
+              <span className="truncate">
+                {unavailable
+                  ? `Ask about EU ${size}`
+                  : availability === "made_to_order"
+                    ? `Commission EU ${size}`
+                    : `Reserve EU ${size}`}
+              </span>
+              <span aria-hidden>↗</span>
+            </a>
+            <a
+              href={`mailto:${site.email}?subject=${encodeURIComponent(
+                `Enquiry — ${product.name} (EU ${size})`,
+              )}`}
+              onClick={onClose}
+              aria-label="Email the studio"
+              className="tap-44 flex w-12 items-center justify-center border border-line text-paper/80 active:bg-paper/10"
+            >
+              ✉
+            </a>
           </div>
         </div>
       </div>

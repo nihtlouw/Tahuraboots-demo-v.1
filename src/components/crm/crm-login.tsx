@@ -36,7 +36,7 @@ export function CrmLogin() {
   }
 
   return (
-    <div className="grid min-h-screen bg-crm lg:grid-cols-[1.05fr_0.95fr]">
+    <div className="grid min-h-dvh bg-crm lg:grid-cols-[1.05fr_0.95fr]">
       <div className="relative hidden flex-col justify-between overflow-hidden bg-ink p-10 lg:flex xl:p-14">
         <div className="pointer-events-none absolute -right-24 top-1/4 h-[420px] w-[420px] rounded-full bg-[radial-gradient(circle,rgba(200,162,102,0.18),transparent_65%)]" />
         <div className="pointer-events-none absolute inset-0">

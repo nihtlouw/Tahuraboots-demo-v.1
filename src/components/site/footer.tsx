@@ -147,17 +147,21 @@ export function Footer() {
               >
                 <input
                   type="email"
+                  inputMode="email"
+                  autoComplete="email"
+                  autoCapitalize="none"
+                  enterKeyHint="send"
                   required
                   value={email}
                   onChange={(event) => setEmail(event.target.value)}
                   placeholder="Email address"
                   aria-label="Email address for the cutting list"
-                  className="w-full bg-transparent px-3 py-3 text-[0.78rem] text-paper outline-none placeholder:text-mute/60"
+                  className="w-full bg-transparent px-3 py-3 text-base text-paper outline-none placeholder:text-mute/60 sm:text-[0.78rem]"
                 />
                 <button
                   type="submit"
                   disabled={busy}
-                  className="shrink-0 bg-brass px-4 text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-ink transition-colors hover:bg-brass-light disabled:cursor-wait disabled:opacity-60"
+                  className="tap-44 shrink-0 bg-brass px-4 text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-ink transition-colors hover:bg-brass-light active:bg-brass disabled:cursor-wait disabled:opacity-60"
                 >
                   {busy ? "…" : "Join"}
                 </button>
@@ -173,7 +177,7 @@ export function Footer() {
                 href={site.instagram}
                 target="_blank"
                 rel="noreferrer"
-                className="flex-1 border border-line px-3 py-2 text-center text-[0.58rem] uppercase tracking-[0.14em] text-paper/60 transition-colors hover:border-brass/60 hover:text-paper"
+                className="flex min-h-11 flex-1 items-center justify-center border border-line px-3 py-2 text-center text-[0.6rem] uppercase tracking-[0.14em] text-paper/60 transition-colors hover:border-brass/60 hover:text-paper"
               >
                 Instagram
               </a>
@@ -181,7 +185,7 @@ export function Footer() {
                 href={site.whatsappHref}
                 target="_blank"
                 rel="noreferrer"
-                className="flex-1 border border-line px-3 py-2 text-center text-[0.58rem] uppercase tracking-[0.14em] text-paper/60 transition-colors hover:border-brass/60 hover:text-paper"
+                className="flex min-h-11 flex-1 items-center justify-center border border-line px-3 py-2 text-center text-[0.6rem] uppercase tracking-[0.14em] text-paper/60 transition-colors hover:border-brass/60 hover:text-paper"
               >
                 WhatsApp
               </a>

@@ -439,6 +439,8 @@ export function OrdersManager({
             }}
             placeholder="Search orders, customers…"
             aria-label="Search orders"
+            enterKeyHint="search"
+            autoCapitalize="none"
             className="crm-input !w-full lg:!w-56"
           />
           <select
@@ -448,7 +450,7 @@ export function OrdersManager({
               setPage(1);
             }}
             aria-label="Sort orders"
-            className="rounded-lg border border-crm-line bg-white px-2.5 py-2.5 text-[0.64rem] text-[#3c332a] outline-none focus:border-[#b08c52]"
+            className="min-h-11 min-w-0 flex-1 rounded-lg border border-crm-line bg-white px-2.5 text-[0.68rem] text-[#3c332a] outline-none focus:border-[#b08c52] sm:min-h-0 sm:flex-none sm:py-2.5 sm:text-[0.64rem]"
           >
             {sortOptions.map((option) => (
               <option key={option.id} value={option.id}>
@@ -459,7 +461,7 @@ export function OrdersManager({
           <button
             type="button"
             onClick={exportCsv}
-            className="shrink-0 rounded-lg border border-crm-line bg-white px-3 py-2.5 text-[0.62rem] font-semibold uppercase tracking-[0.12em] text-[#5f5548] transition-colors hover:border-[#c6b699]"
+            className="min-h-11 shrink-0 rounded-lg border border-crm-line bg-white px-3 text-[0.62rem] font-semibold uppercase tracking-[0.12em] text-[#5f5548] transition-colors hover:border-[#c6b699] active:bg-[#faf6ee] sm:min-h-0 sm:py-2.5"
           >
             Export CSV
           </button>
@@ -469,7 +471,7 @@ export function OrdersManager({
               resetComposer();
               setCreating(true);
             }}
-            className="shrink-0 rounded-lg bg-[#7a5a2e] px-3.5 py-2.5 text-[0.62rem] font-semibold uppercase tracking-[0.12em] text-white transition-colors hover:bg-[#5f451f]"
+            className="min-h-11 shrink-0 rounded-lg bg-[#7a5a2e] px-3.5 text-[0.62rem] font-semibold uppercase tracking-[0.12em] text-white transition-colors hover:bg-[#5f451f] active:bg-[#5f451f] sm:min-h-0 sm:py-2.5"
           >
             + New order
           </button>
@@ -538,13 +540,15 @@ export function OrdersManager({
             return (
               <li key={order.id}>
                 <div className="grid grid-cols-[auto_1fr_auto] items-start gap-3 px-4 py-3 sm:grid-cols-[auto_1.1fr_1fr_auto_auto] sm:items-center">
-                  <input
-                    type="checkbox"
-                    checked={selected.includes(order.id)}
-                    onChange={() => toggleRow(order.id)}
-                    aria-label={`Select order ${order.orderNumber}`}
-                    className="mt-1 h-3.5 w-3.5 accent-[#7a5a2e] sm:mt-0"
-                  />
+                  <label className="-m-2 flex h-11 w-11 cursor-pointer items-center justify-center sm:m-0 sm:h-auto sm:w-auto">
+                    <input
+                      type="checkbox"
+                      checked={selected.includes(order.id)}
+                      onChange={() => toggleRow(order.id)}
+                      aria-label={`Select order ${order.orderNumber}`}
+                      className="h-4 w-4 accent-[#7a5a2e] sm:h-3.5 sm:w-3.5"
+                    />
+                  </label>
                   <div className="min-w-0">
                     <p className="text-[0.76rem] font-semibold text-[#221b15]">{order.orderNumber}</p>
                     <p className="text-[0.62rem] text-[#a19683]">{formatDate(order.createdAt)}</p>
@@ -560,7 +564,7 @@ export function OrdersManager({
                     <p className="text-[0.76rem] font-semibold text-[#221b15]">{formatIdr(order.totalIdr)}</p>
                     <p className="text-[0.6rem] text-[#a19683]">{pairsIn(order)} pair(s)</p>
                   </div>
-                  <div className="flex items-center justify-end gap-2">
+                  <div className="col-span-3 flex items-center gap-2 sm:col-span-1 sm:justify-end">
                     <select
                       value={order.status}
                       onChange={(event) => {
@@ -570,7 +574,7 @@ export function OrdersManager({
                       }}
                       disabled={busy === order.id}
                       aria-label={`Status for ${order.orderNumber}`}
-                      className="rounded-lg border border-crm-line bg-white px-2 py-1.5 text-[0.66rem] font-medium text-[#3c332a] outline-none focus:border-[#b08c52] disabled:opacity-60"
+                      className="min-h-11 flex-1 rounded-lg border border-crm-line bg-white px-2 text-[0.72rem] font-medium text-[#3c332a] outline-none focus:border-[#b08c52] disabled:opacity-60 sm:min-h-0 sm:flex-none sm:py-1.5 sm:text-[0.66rem]"
                     >
                       {ORDER_STATUSES.map((status) => (
                         <option key={status} value={status}>{orderStatusMeta[status].label}</option>
@@ -581,7 +585,7 @@ export function OrdersManager({
                       onClick={() => setExpanded(isOpen ? null : order.id)}
                       aria-label={isOpen ? "Collapse order" : "Expand order"}
                       aria-expanded={isOpen}
-                      className="flex h-8 w-8 items-center justify-center rounded-md border border-crm-line text-[0.7rem] text-[#7a7062] transition-colors hover:bg-[#f4eee2]"
+                      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md border border-crm-line text-[0.8rem] text-[#7a7062] transition-colors hover:bg-[#f4eee2] active:bg-[#f4eee2] sm:h-8 sm:w-8 sm:text-[0.7rem]"
                     >
                       {isOpen ? "−" : "+"}
                     </button>
@@ -625,13 +629,13 @@ export function OrdersManager({
                         <button
                           type="button"
                           onClick={() => setEditing({ ...order })}
-                          className="rounded-md border border-crm-line bg-white px-2.5 py-1.5 text-[0.6rem] font-medium text-[#5f5548] hover:border-[#c6b699]"
+                          className="min-h-10 rounded-md border border-crm-line bg-white px-3 text-[0.64rem] font-medium text-[#5f5548] active:bg-[#faf6ee]"
                         >
                           Edit details
                         </button>
                         <a
                           href={`mailto:${order.customerEmail}?subject=${encodeURIComponent(`Your Tahura order ${order.orderNumber}`)}`}
-                          className="rounded-md border border-crm-line bg-white px-2.5 py-1.5 text-[0.6rem] font-medium text-[#5f5548] hover:border-[#c6b699]"
+                          className="min-h-10 rounded-md border border-crm-line bg-white px-3 text-[0.64rem] font-medium text-[#5f5548] active:bg-[#faf6ee]"
                         >
                           Email customer
                         </a>
@@ -640,7 +644,7 @@ export function OrdersManager({
                             href={`https://wa.me/${order.customerPhone.replace(/[^0-9]/g, "")}`}
                             target="_blank"
                             rel="noreferrer"
-                            className="rounded-md border border-crm-line bg-white px-2.5 py-1.5 text-[0.6rem] font-medium text-[#5f5548] hover:border-[#c6b699]"
+                            className="min-h-10 rounded-md border border-crm-line bg-white px-3 text-[0.64rem] font-medium text-[#5f5548] active:bg-[#faf6ee]"
                           >
                             WhatsApp
                           </a>
@@ -649,7 +653,7 @@ export function OrdersManager({
                           type="button"
                           onClick={() => setPendingDelete(order)}
                           disabled={busy === order.id}
-                          className="rounded-md border border-transparent px-2 py-1.5 text-[0.6rem] text-[#a19683] hover:border-[#dfc0bb] hover:bg-[#f1dedb] hover:text-[#88423a]"
+                          className="min-h-10 rounded-md border border-transparent px-3 text-[0.64rem] text-[#a19683] active:bg-[#f1dedb] active:text-[#88423a]"
                         >
                           Delete
                         </button>
@@ -719,11 +723,11 @@ export function OrdersManager({
             </div>
             <div>
               <label className="crm-label" htmlFor="order-email">Email</label>
-              <input id="order-email" required type="email" value={form.customerEmail} onChange={(event) => setForm({ ...form, customerEmail: event.target.value })} className="crm-input" placeholder="raka@email.com" />
+              <input id="order-email" required type="email" inputMode="email" autoComplete="email" autoCapitalize="none" value={form.customerEmail} onChange={(event) => setForm({ ...form, customerEmail: event.target.value })} className="crm-input" placeholder="raka@email.com" />
             </div>
             <div>
               <label className="crm-label" htmlFor="order-phone">Phone / WhatsApp</label>
-              <input id="order-phone" value={form.customerPhone} onChange={(event) => setForm({ ...form, customerPhone: event.target.value })} className="crm-input" placeholder="+62 812 …" />
+              <input id="order-phone" type="tel" inputMode="tel" autoComplete="tel" value={form.customerPhone} onChange={(event) => setForm({ ...form, customerPhone: event.target.value })} className="crm-input" placeholder="+62 812 …" />
             </div>
             <div>
               <label className="crm-label" htmlFor="order-channel">Channel</label>
@@ -920,7 +924,7 @@ export function OrdersManager({
             </div>
           </div>
 
-          <div className="flex flex-col gap-3 border-t border-crm-line px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-3 border-t border-crm-line px-5 py-4 sm:flex-row sm:items-center sm:justify-between sheet-actions">
             <div>
               <p className="text-[0.56rem] font-semibold uppercase tracking-[0.14em] text-[#a19683]">Order total</p>
               <p className="font-display text-xl text-[#221b15]">{formatIdr(total)}</p>
@@ -955,11 +959,11 @@ export function OrdersManager({
               </div>
               <div>
                 <label className="crm-label" htmlFor="edit-email">Email</label>
-                <input id="edit-email" required type="email" value={editing.customerEmail} onChange={(event) => setEditing({ ...editing, customerEmail: event.target.value })} className="crm-input" />
+                <input id="edit-email" required type="email" inputMode="email" autoComplete="email" autoCapitalize="none" value={editing.customerEmail} onChange={(event) => setEditing({ ...editing, customerEmail: event.target.value })} className="crm-input" />
               </div>
               <div>
                 <label className="crm-label" htmlFor="edit-phone">Phone / WhatsApp</label>
-                <input id="edit-phone" value={editing.customerPhone} onChange={(event) => setEditing({ ...editing, customerPhone: event.target.value })} className="crm-input" />
+                <input id="edit-phone" type="tel" inputMode="tel" autoComplete="tel" value={editing.customerPhone} onChange={(event) => setEditing({ ...editing, customerPhone: event.target.value })} className="crm-input" />
               </div>
               <div>
                 <label className="crm-label" htmlFor="edit-channel">Channel</label>
@@ -986,7 +990,7 @@ export function OrdersManager({
               </p>
             </div>
 
-            <div className="flex items-center justify-end gap-2 border-t border-crm-line px-5 py-4">
+            <div className="flex items-center justify-end gap-2 border-t border-crm-line px-5 py-4 sheet-actions">
               <button type="button" onClick={() => setEditing(null)} className="rounded-lg border border-crm-line px-4 py-2.5 text-[0.62rem] font-semibold uppercase tracking-[0.12em] text-[#7a7062]">
                 Cancel
               </button>

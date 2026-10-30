@@ -247,7 +247,7 @@ export default async function CrmOverviewPage() {
         }
       />
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
         <StatCard
           label="Revenue in the ledger"
           value={formatIdr(revenue)}
@@ -296,13 +296,13 @@ export default async function CrmOverviewPage() {
           }
         >
           <div className="px-5 pb-5 pt-6">
-            <div className="flex h-48 items-end gap-2.5 sm:gap-4">
+            <div className="flex h-40 items-end gap-1.5 sm:h-48 sm:gap-4">
               {weeks.map((week, index) => {
                 const height = Math.max(4, Math.round((week.value / peak) * 100));
                 const isCurrent = index === weeks.length - 1;
                 return (
                   <div key={`${week.label}-${index}`} className="flex flex-1 flex-col items-center gap-2">
-                    <span className="text-[0.55rem] font-medium text-[#8b8173] opacity-0 transition-opacity hover:opacity-100 sm:opacity-100">
+                    <span className="text-[0.55rem] font-medium text-[#8b8173]">
                       {week.value > 0 ? formatIdrCompact(week.value) : "—"}
                     </span>
                     <div className="flex w-full flex-1 items-end">
@@ -376,7 +376,37 @@ export default async function CrmOverviewPage() {
             </Link>
           }
         >
-          <div className="overflow-x-auto">
+          {/* Ponsel: kartu ringkas, bukan tabel 560px yang harus digeser. */}
+          <ul className="divide-y divide-crm-line/70 md:hidden">
+            {recentOrders.map((order) => (
+              <li key={order.id} className="flex items-center gap-3 px-4 py-3">
+                <Avatar name={order.customerName} />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[0.8rem] font-medium text-[#3c332a]">
+                    {order.customerName}
+                  </p>
+                  <p className="truncate text-[0.64rem] text-[#a19683]">
+                    {order.orderNumber} · {order.city} · {timeAgo(order.createdAt)}
+                  </p>
+                </div>
+                <div className="shrink-0 text-right">
+                  <p className="text-[0.76rem] font-semibold text-[#221b15]">
+                    {formatIdrCompact(order.totalIdr)}
+                  </p>
+                  <div className="mt-1 flex justify-end">
+                    <OrderPill status={order.status} />
+                  </div>
+                </div>
+              </li>
+            ))}
+            {recentOrders.length === 0 && (
+              <li className="px-4 py-8 text-center text-[0.72rem] text-[#8b8173]">
+                No orders yet.
+              </li>
+            )}
+          </ul>
+
+          <div className="hidden overflow-x-auto md:block">
             <table className="w-full min-w-[560px] text-left">
               <thead>
                 <tr className="border-b border-crm-line text-[0.55rem] uppercase tracking-[0.14em] text-[#a19683]">

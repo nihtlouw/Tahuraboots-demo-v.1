@@ -206,18 +206,21 @@ export function Modal({
 
   return (
     <div
-      className="fixed inset-0 z-[60] flex items-start justify-center overflow-y-auto bg-ink/55 p-4 backdrop-blur-sm sm:items-center"
+      className="fixed inset-0 z-[60] flex items-end justify-center overflow-y-auto bg-ink/55 backdrop-blur-sm sm:items-center sm:p-4"
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) onClose();
       }}
     >
+      {/* Ponsel: lembar bawah (bottom sheet) setinggi maksimal 92dvh dengan
+          gulir internal, sehingga tombol simpan tetap terjangkau dan keyboard
+          tidak menutupi formulir. Layar besar tetap dialog di tengah. */}
       <div
         ref={panelRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby={labelledBy}
         tabIndex={-1}
-        className={`w-full ${width} my-auto rounded-xl border border-crm-line bg-white shadow-xl outline-none`}
+        className={`max-h-[92dvh] w-full ${width} overflow-y-auto overscroll-contain rounded-t-2xl border border-crm-line bg-white shadow-xl outline-none sm:max-h-none sm:overflow-visible sm:rounded-xl`}
       >
         {children}
       </div>
@@ -288,7 +291,7 @@ export function ConfirmDialog({
         </h2>
         <div className="mt-2 text-[0.78rem] leading-relaxed text-[#7a7062]">{message}</div>
       </div>
-      <div className="flex items-center justify-end gap-2 border-t border-crm-line px-5 py-4">
+      <div className="flex items-center justify-end gap-2 border-t border-crm-line px-5 py-4 sheet-actions">
         <button
           type="button"
           onClick={onCancel}
