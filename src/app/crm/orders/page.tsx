@@ -2,6 +2,7 @@ import { desc, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { orderItems, orders, products } from "@/db/schema";
 import { ensureSeed } from "@/db/seed";
+import { isOwner } from "@/lib/auth";
 import { formatIdr } from "@/lib/format";
 import { CrmHeader, StatCard } from "@/components/crm/ui";
 import {
@@ -13,6 +14,10 @@ import {
 export const dynamic = "force-dynamic";
 
 export default async function CrmOrdersPage() {
+  // Lapisan kedua: layout sudah menyembunyikan UI, tapi tanpa guard ini
+  // komponen halaman tetap dieksekusi dan datanya bocor di payload RSC.
+  if (!(await isOwner())) return null;
+
   await ensureSeed();
 
   const [orderRows, itemRows, productRows] = await Promise.all([

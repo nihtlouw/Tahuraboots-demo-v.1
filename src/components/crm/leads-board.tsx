@@ -1,10 +1,11 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { LEAD_STATUSES, leadStatusMeta } from "@/lib/catalog";
 import { formatIdr, timeAgo } from "@/lib/format";
 import { LeadPill } from "@/components/crm/ui";
+import { csvStamp, downloadCsv } from "@/lib/csv";
 
 export type CrmLead = {
   id: number;
@@ -29,6 +30,8 @@ export function LeadsBoard({ initial }: { initial: CrmLead[] }) {
   const [selected, setSelected] = useState<CrmLead | null>(null);
   const [notes, setNotes] = useState("");
   const [savingNotes, setSavingNotes] = useState(false);
+  const [query, setQuery] = useState("");
+  const [toast, setToast] = useState<string | null>(null);
   const [syncedInitial, setSyncedInitial] = useState(initial);
   const [weekAgo] = useState(() => Date.now() - 7 * 24 * 60 * 60 * 1000);
 
@@ -85,14 +88,26 @@ export function LeadsBoard({ initial }: { initial: CrmLead[] }) {
     }
   }
 
-  const openValue = leads
+  const visibleLeads = useMemo(() => {
+    const needle = query.trim().toLowerCase();
+    if (!needle) return leads;
+    return leads.filter((lead) =>
+      `${lead.name} ${lead.email} ${lead.phone} ${lead.productInterest} ${lead.country} ${lead.message}`
+        .toLowerCase()
+        .includes(needle),
+    );
+  }, [leads, query]);
+
+  const openValue = visibleLeads
     .filter((lead) => ["new", "contacted", "quoted"].includes(lead.status))
     .reduce((sum, lead) => sum + lead.valueIdr, 0);
-  const newThisWeek = leads.filter(
+  const newThisWeek = visibleLeads.filter(
     (lead) => new Date(lead.createdAt).getTime() > weekAgo,
   ).length;
-  const won = leads.filter((lead) => lead.status === "won");
-  const conversion = leads.length ? Math.round((won.length / leads.length) * 100) : 0;
+  const won = visibleLeads.filter((lead) => lead.status === "won");
+  const conversion = visibleLeads.length
+    ? Math.round((won.length / visibleLeads.length) * 100)
+    : 0;
 
   return (
     <div className="space-y-4">
@@ -101,7 +116,7 @@ export function LeadsBoard({ initial }: { initial: CrmLead[] }) {
           ["Open pipeline", formatIdr(openValue)],
           ["New this week", String(newThisWeek)],
           ["Converted", `${won.length} (${conversion}%)`],
-          ["Total enquiries", String(leads.length)],
+          ["Total enquiries", String(visibleLeads.length)],
         ].map(([label, value]) => (
           <div key={label} className="rounded-xl border border-crm-line bg-white px-4 py-3">
             <p className="text-[0.58rem] font-semibold uppercase tracking-[0.14em] text-[#a19683]">{label}</p>
@@ -117,10 +132,56 @@ export function LeadsBoard({ initial }: { initial: CrmLead[] }) {
         </div>
       )}
 
+      <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-crm-line bg-white px-3 py-2.5">
+        <input
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder="Cari nama, email, produk…"
+          className="crm-input !w-full sm:!w-64"
+          aria-label="Cari leads"
+        />
+        <div className="flex items-center gap-2">
+          <span className="text-[0.62rem] text-[#8b8173]">
+            {visibleLeads.length} dari {leads.length} leads
+          </span>
+          <button
+            type="button"
+            onClick={() => {
+              const ok = downloadCsv(
+                csvStamp("tahura-leads"),
+                visibleLeads.map((lead) => ({
+                  name: lead.name,
+                  email: lead.email,
+                  phone: lead.phone,
+                  country: lead.country,
+                  productInterest: lead.productInterest,
+                  source: lead.source,
+                  status: lead.status,
+                  valueIdr: lead.valueIdr,
+                  notes: lead.notes,
+                  createdAt: new Date(lead.createdAt).toISOString(),
+                })),
+              );
+              setToast(ok ? `${visibleLeads.length} leads diekspor ke CSV.` : "Tidak ada baris untuk diekspor.");
+            }}
+            className="rounded-lg border border-crm-line bg-white px-3 py-2 text-[0.62rem] font-semibold uppercase tracking-[0.12em] text-[#5f5548] transition-colors hover:border-[#c6b699]"
+          >
+            Export CSV
+          </button>
+        </div>
+      </div>
+
+      {toast && (
+        <div role="status" className="flex items-center justify-between gap-3 rounded-lg border border-[#cbd8bf] bg-[#eef3e6] px-4 py-2.5 text-[0.76rem] text-[#4c6034]">
+          {toast}
+          <button type="button" onClick={() => setToast(null)} className="font-semibold">✕</button>
+        </div>
+      )}
+
       <div className="hide-scrollbar grid gap-3 overflow-x-auto pb-2 md:grid-cols-2 xl:grid-cols-5">
         {LEAD_STATUSES.map((stage) => {
           const stageMeta = leadStatusMeta[stage];
-          const stageLeads = leads.filter((lead) => lead.status === stage);
+          const stageLeads = visibleLeads.filter((lead) => lead.status === stage);
           return (
             <div key={stage} className="min-w-[260px] rounded-xl border border-crm-line bg-[#faf7f1]">
               <div className="flex items-center justify-between border-b border-crm-line px-3 py-2.5">

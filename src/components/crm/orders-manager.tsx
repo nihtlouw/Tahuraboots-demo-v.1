@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { CHANNELS, ORDER_STATUSES, orderStatusMeta } from "@/lib/catalog";
 import { formatDate, formatIdr } from "@/lib/format";
 import { Avatar, ChannelBadge, OrderPill, Panel } from "@/components/crm/ui";
+import { csvStamp, downloadCsv } from "@/lib/csv";
 
 export type CrmOrderItem = {
   id: number;
@@ -41,6 +42,18 @@ export type ProductOption = {
 
 type LineItem = { productId: string; size: string; quantity: number };
 
+type SortKey = "newest" | "oldest" | "total-desc" | "total-asc" | "customer";
+
+const PAGE_SIZE = 8;
+
+const sortOptions: { id: SortKey; label: string }[] = [
+  { id: "newest", label: "Newest first" },
+  { id: "oldest", label: "Oldest first" },
+  { id: "total-desc", label: "Total · high to low" },
+  { id: "total-asc", label: "Total · low to high" },
+  { id: "customer", label: "Customer A–Z" },
+];
+
 export function OrdersManager({
   initial,
   productOptions,
@@ -57,6 +70,12 @@ export function OrdersManager({
   const [error, setError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [sort, setSort] = useState<SortKey>("newest");
+  const [page, setPage] = useState(1);
+  const [selectedIds, setSelectedIds] = useState<number[]>([]);
+  const [bulkStatus, setBulkStatus] = useState<string>("paid");
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
   const [form, setForm] = useState({
     customerName: "",
     customerEmail: "",
@@ -82,20 +101,103 @@ export function OrdersManager({
     setOrders(initial);
   }
 
-  const filtered = useMemo(
-    () =>
-      orders.filter((order) => {
-        const matchesFilter = filter === "all" || order.status === filter;
-        const needle = query.trim().toLowerCase();
-        const matchesQuery =
-          !needle ||
-          `${order.orderNumber} ${order.customerName} ${order.customerEmail} ${order.city} ${order.country}`
-            .toLowerCase()
-            .includes(needle);
-        return matchesFilter && matchesQuery;
-      }),
-    [orders, filter, query],
-  );
+  const filtered = useMemo(() => {
+    const needle = query.trim().toLowerCase();
+
+    const rows = orders.filter((order) => {
+      const matchesFilter = filter === "all" || order.status === filter;
+      if (!matchesFilter) return false;
+      if (!needle) return true;
+      return `${order.orderNumber} ${order.customerName} ${order.customerEmail} ${order.city} ${order.country}`
+        .toLowerCase()
+        .includes(needle);
+    });
+
+    const sorted = [...rows];
+    if (sort === "oldest") sorted.sort((a, b) => +new Date(a.createdAt) - +new Date(b.createdAt));
+    else if (sort === "total-desc") sorted.sort((a, b) => b.totalIdr - a.totalIdr);
+    else if (sort === "total-asc") sorted.sort((a, b) => a.totalIdr - b.totalIdr);
+    else if (sort === "customer") sorted.sort((a, b) => a.customerName.localeCompare(b.customerName));
+    else sorted.sort((a, b) => +new Date(b.createdAt) - +new Date(a.createdAt));
+
+    return sorted;
+  }, [orders, filter, query, sort]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+  const paged = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  const pageIds = paged.map((order) => order.id);
+  const allPageSelected = pageIds.length > 0 && pageIds.every((id) => selectedIds.includes(id));
+
+  function toggleRow(id: number) {
+    setSelectedIds((current) =>
+      current.includes(id) ? current.filter((value) => value !== id) : [...current, id],
+    );
+  }
+
+  function togglePage() {
+    setSelectedIds((current) => {
+      if (allPageSelected) return current.filter((id) => !pageIds.includes(id));
+      return [...new Set([...current, ...pageIds])];
+    });
+  }
+
+  async function applyBulkStatus() {
+    if (selectedIds.length === 0) return;
+    setBulkBusy(true);
+    setError(null);
+    try {
+      const response = await fetch("/api/crm/orders/bulk", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids: selectedIds, status: bulkStatus }),
+      });
+      const data = (await response.json()) as {
+        ok?: boolean;
+        updated?: number[];
+        error?: string;
+      };
+      if (!response.ok || !data.ok) throw new Error(data.error ?? "Bulk update failed.");
+
+      const updatedIds = new Set(data.updated ?? []);
+      setOrders((current) =>
+        current.map((order) =>
+          updatedIds.has(order.id) ? { ...order, status: bulkStatus } : order,
+        ),
+      );
+      setToast(
+        `${updatedIds.size} order${updatedIds.size === 1 ? "" : "s"} moved to ${orderStatusMeta[bulkStatus]?.label ?? bulkStatus}.`,
+      );
+      setSelectedIds([]);
+      router.refresh();
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Bulk update failed.");
+    } finally {
+      setBulkBusy(false);
+    }
+  }
+
+  function exportCsv() {
+    const ok = downloadCsv(
+      csvStamp("tahura-orders"),
+      filtered.map((order) => ({
+        orderNumber: order.orderNumber,
+        createdAt: new Date(order.createdAt).toISOString(),
+        customerName: order.customerName,
+        customerEmail: order.customerEmail,
+        customerPhone: order.customerPhone,
+        city: order.city,
+        country: order.country,
+        channel: order.channel,
+        status: order.status,
+        totalIdr: order.totalIdr,
+        pairs: order.items.reduce((sum, item) => sum + item.quantity, 0),
+        notes: order.notes,
+      })),
+    );
+    if (!ok) setError("Tidak ada baris untuk diekspor.");
+    else setToast(`${filtered.length} order diekspor ke CSV.`);
+  }
 
   const total = lines.reduce((sum, line) => {
     const product = productOptions.find(
@@ -231,13 +333,38 @@ export function OrdersManager({
             </button>
           ))}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <input
             value={query}
-            onChange={(event) => setQuery(event.target.value)}
+            onChange={(event) => {
+              setQuery(event.target.value);
+              setPage(1);
+            }}
             placeholder="Search orders, customers…"
             className="crm-input !w-full lg:!w-56"
           />
+          <select
+            value={sort}
+            onChange={(event) => {
+              setSort(event.target.value as SortKey);
+              setPage(1);
+            }}
+            aria-label="Sort orders"
+            className="rounded-lg border border-crm-line bg-white px-2.5 py-2.5 text-[0.64rem] text-[#3c332a] outline-none focus:border-[#b08c52]"
+          >
+            {sortOptions.map((option) => (
+              <option key={option.id} value={option.id}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+          <button
+            type="button"
+            onClick={exportCsv}
+            className="shrink-0 rounded-lg border border-crm-line bg-white px-3 py-2.5 text-[0.62rem] font-semibold uppercase tracking-[0.12em] text-[#5f5548] transition-colors hover:border-[#c6b699]"
+          >
+            Export CSV
+          </button>
           <button
             type="button"
             onClick={() => setCreating(true)}
@@ -255,13 +382,76 @@ export function OrdersManager({
         </div>
       )}
 
-      <Panel title="Order ledger" subtitle={`${filtered.length} orders in view`}>
+      {toast && (
+        <div role="status" className="flex items-center justify-between gap-3 rounded-lg border border-[#cbd8bf] bg-[#eef3e6] px-4 py-2.5 text-[0.76rem] text-[#4c6034]">
+          {toast}
+          <button type="button" onClick={() => setToast(null)} className="font-semibold">✕</button>
+        </div>
+      )}
+
+      {selectedIds.length > 0 && (
+        <div className="flex flex-wrap items-center gap-3 rounded-lg border border-[#d8c9ae] bg-[#faf6ee] px-4 py-2.5 text-[0.74rem] text-[#5f5548]">
+          <strong className="font-semibold text-[#3c332a]">
+            {selectedIds.length} dipilih
+          </strong>
+          <label className="flex items-center gap-2">
+            <span className="text-[0.62rem] uppercase tracking-[0.12em] text-[#a19683]">Set status</span>
+            <select
+              value={bulkStatus}
+              onChange={(event) => setBulkStatus(event.target.value)}
+              className="rounded-md border border-crm-line bg-white px-2 py-1.5 text-[0.68rem] outline-none focus:border-[#b08c52]"
+            >
+              {ORDER_STATUSES.map((status) => (
+                <option key={status} value={status}>{orderStatusMeta[status].label}</option>
+              ))}
+            </select>
+          </label>
+          <button
+            type="button"
+            onClick={applyBulkStatus}
+            disabled={bulkBusy}
+            className="rounded-md bg-[#7a5a2e] px-3 py-1.5 text-[0.6rem] font-semibold uppercase tracking-[0.12em] text-white transition-colors hover:bg-[#5f451f] disabled:opacity-60"
+          >
+            {bulkBusy ? "Menyimpan…" : "Terapkan"}
+          </button>
+          <button
+            type="button"
+            onClick={() => setSelectedIds([])}
+            className="text-[0.62rem] text-[#8b8173] underline-offset-4 hover:underline"
+          >
+            Bersihkan pilihan
+          </button>
+        </div>
+      )}
+
+      <Panel
+        title="Order ledger"
+        subtitle={`${filtered.length} orders in view · page ${currentPage}/${totalPages}`}
+        action={
+          <label className="flex items-center gap-2 text-[0.62rem] text-[#8b8173]">
+            <input
+              type="checkbox"
+              checked={allPageSelected}
+              onChange={togglePage}
+              className="h-3.5 w-3.5 accent-[#7a5a2e]"
+            />
+            Pilih halaman ini
+          </label>
+        }
+      >
         <ul className="divide-y divide-crm-line/70">
-          {filtered.map((order) => {
+          {paged.map((order) => {
             const isOpen = expanded === order.id;
             return (
               <li key={order.id}>
-                <div className="grid grid-cols-[1fr_auto] items-start gap-3 px-4 py-3 sm:grid-cols-[1.1fr_1fr_auto_auto] sm:items-center">
+                <div className="grid grid-cols-[auto_1fr_auto] items-start gap-3 px-4 py-3 sm:grid-cols-[auto_1.1fr_1fr_auto_auto] sm:items-center">
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.includes(order.id)}
+                    onChange={() => toggleRow(order.id)}
+                    aria-label={`Pilih pesanan ${order.orderNumber}`}
+                    className="mt-1 h-3.5 w-3.5 accent-[#7a5a2e] sm:mt-0"
+                  />
                   <div className="min-w-0">
                     <p className="text-[0.76rem] font-semibold text-[#221b15]">{order.orderNumber}</p>
                     <p className="text-[0.62rem] text-[#a19683]">{formatDate(order.createdAt)}</p>
@@ -367,6 +557,36 @@ export function OrdersManager({
           <div className="px-6 py-14 text-center">
             <p className="font-display text-lg text-[#3c332a]">No orders in this view.</p>
             <p className="mt-1 text-[0.76rem] text-[#8b8173]">Log a new order or clear the filter.</p>
+          </div>
+        )}
+
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between gap-3 border-t border-crm-line px-4 py-3 text-[0.66rem] text-[#8b8173]">
+            <span>
+              Menampilkan {(currentPage - 1) * PAGE_SIZE + 1}–
+              {Math.min(currentPage * PAGE_SIZE, filtered.length)} dari {filtered.length}
+            </span>
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => setPage(Math.max(1, currentPage - 1))}
+                disabled={currentPage === 1}
+                className="rounded-md border border-crm-line bg-white px-2.5 py-1.5 disabled:opacity-40"
+              >
+                ←
+              </button>
+              <span className="px-1 font-medium text-[#3c332a]">
+                {currentPage} / {totalPages}
+              </span>
+              <button
+                type="button"
+                onClick={() => setPage(Math.min(totalPages, currentPage + 1))}
+                disabled={currentPage === totalPages}
+                className="rounded-md border border-crm-line bg-white px-2.5 py-1.5 disabled:opacity-40"
+              >
+                →
+              </button>
+            </div>
           </div>
         )}
       </Panel>

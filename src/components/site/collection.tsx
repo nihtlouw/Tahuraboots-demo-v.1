@@ -1,16 +1,16 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Reveal } from "@/components/site/reveal";
+import { ProductModal } from "@/components/site/product-modal";
 import { SectionHeading } from "@/components/site/kit";
 import {
   availabilityCopy,
   resolveAvailability,
   type Availability,
 } from "@/lib/catalog";
-import { formatIdr, formatUsdFromIdr } from "@/lib/format";
-import { site } from "@/lib/site";
+import { formatIdr } from "@/lib/format";
 
 export type CollectionProduct = {
   id: number;
@@ -31,6 +31,15 @@ export type CollectionProduct = {
 
 type Filter = "all" | Availability;
 
+type SortKey = "featured" | "price-asc" | "price-desc" | "name";
+
+const sorts: { id: SortKey; label: string }[] = [
+  { id: "featured", label: "Studio picks" },
+  { id: "price-asc", label: "Price · low to high" },
+  { id: "price-desc", label: "Price · high to low" },
+  { id: "name", label: "A–Z" },
+];
+
 const filters: { id: Filter; label: string }[] = [
   { id: "all", label: "All styles" },
   { id: "ready", label: "Ready to ship" },
@@ -41,6 +50,8 @@ const filters: { id: Filter; label: string }[] = [
 export function Collection({ products }: { products: CollectionProduct[] }) {
   const [filter, setFilter] = useState<Filter>("all");
   const [selected, setSelected] = useState<CollectionProduct | null>(null);
+  const [query, setQuery] = useState("");
+  const [sort, setSort] = useState<SortKey>("featured");
 
   const counted = useMemo(() => {
     const base: Record<Filter, number> = {
@@ -57,29 +68,30 @@ export function Collection({ products }: { products: CollectionProduct[] }) {
   }, [products]);
 
   const visible = useMemo(() => {
-    if (filter === "all") return products;
-    if (filter === "ready") {
-      return products.filter(
-        (product) => resolveAvailability(product) === "ready",
-      );
-    }
-    return products.filter(
-      (product) => resolveAvailability(product) === filter,
-    );
-  }, [filter, products]);
+    const needle = query.trim().toLowerCase();
 
-  useEffect(() => {
-    if (!selected) return;
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setSelected(null);
-    };
-    document.addEventListener("keydown", onKey);
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = "";
-    };
-  }, [selected]);
+    const filtered = products.filter((product) => {
+      const matchesFilter =
+        filter === "all" || resolveAvailability(product) === filter;
+      if (!matchesFilter) return false;
+      if (!needle) return true;
+
+      return `${product.name} ${product.model} ${product.leather} ${product.colorway} ${product.collectionName}`
+        .toLowerCase()
+        .includes(needle);
+    });
+
+    const sorted = [...filtered];
+    if (sort === "price-asc") sorted.sort((a, b) => a.priceIdr - b.priceIdr);
+    else if (sort === "price-desc") sorted.sort((a, b) => b.priceIdr - a.priceIdr);
+    else if (sort === "name") sorted.sort((a, b) => a.name.localeCompare(b.name));
+    else
+      sorted.sort(
+        (a, b) => Number(b.featured) - Number(a.featured) || a.id - b.id,
+      );
+
+    return sorted;
+  }, [filter, products, query, sort]);
 
   return (
     <section
@@ -126,9 +138,54 @@ export function Collection({ products }: { products: CollectionProduct[] }) {
               );
             })}
           </div>
+          <div className="flex items-center gap-3">
+            <label className="sr-only" htmlFor="collection-search">
+              Search the collection
+            </label>
+            <input
+              id="collection-search"
+              type="search"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Search model, leather…"
+              className="w-44 border border-line bg-transparent px-3 py-2 text-[0.7rem] text-paper outline-none transition-colors placeholder:text-mute/60 focus:border-brass sm:w-56"
+            />
+            <label className="sr-only" htmlFor="collection-sort">
+              Sort styles
+            </label>
+            <select
+              id="collection-sort"
+              value={sort}
+              onChange={(event) => setSort(event.target.value as SortKey)}
+              className="border border-line bg-ink px-3 py-2 text-[0.66rem] uppercase tracking-[0.12em] text-paper/75 outline-none transition-colors focus:border-brass"
+            >
+              {sorts.map((option) => (
+                <option key={option.id} value={option.id}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-line/40 pt-3">
           <p className="text-[0.6rem] uppercase tracking-[0.2em] text-mute">
-            {visible.length} styles showing
+            {visible.length} of {products.length} styles
+            {query ? ` · “${query}”` : ""}
           </p>
+          {(query || filter !== "all" || sort !== "featured") && (
+            <button
+              type="button"
+              onClick={() => {
+                setQuery("");
+                setFilter("all");
+                setSort("featured");
+              }}
+              className="text-[0.6rem] uppercase tracking-[0.16em] text-brass underline-offset-4 hover:underline"
+            >
+              Reset view
+            </button>
+          )}
         </div>
 
         <div className="mt-8 grid gap-x-5 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
@@ -235,152 +292,5 @@ export function Collection({ products }: { products: CollectionProduct[] }) {
         <ProductModal product={selected} onClose={() => setSelected(null)} />
       )}
     </section>
-  );
-}
-
-function ProductModal({
-  product,
-  onClose,
-}: {
-  product: CollectionProduct;
-  onClose: () => void;
-}) {
-  const availability = resolveAvailability(product);
-  const meta = availabilityCopy[availability];
-  const unavailable =
-    availability === "sold_out" || availability === "archive";
-  const sizes = product.sizes.split(",").filter(Boolean);
-  const inquiry = encodeURIComponent(
-    `Hi Tahura Boots Co., I'm interested in the ${product.name} (${product.colorway}) — size EU ${
-      sizes[0] ?? "42"
-    }. Could you confirm availability and shipping?`,
-  );
-
-  return (
-    <div
-      className="fixed inset-0 z-[70] flex items-end justify-center bg-ink/85 p-0 backdrop-blur-md sm:items-center sm:p-6"
-      role="dialog"
-      aria-modal="true"
-      aria-label={`${product.name} details`}
-      onClick={onClose}
-    >
-      <div
-        className="animate-rise relative max-h-[92vh] w-full max-w-4xl overflow-y-auto border border-line bg-ink-2"
-        onClick={(event) => event.stopPropagation()}
-      >
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label="Close product details"
-          className="absolute right-3 top-3 z-10 flex h-10 w-10 items-center justify-center border border-paper/25 bg-ink/70 text-paper transition-colors hover:border-brass hover:text-brass"
-        >
-          ✕
-        </button>
-
-        <div className="grid md:grid-cols-2">
-          <div className="relative aspect-[4/5] w-full md:aspect-auto md:min-h-[540px]">
-            <Image
-              src={product.imageUrl}
-              alt={`${product.name} in ${product.colorway}`}
-              fill
-              sizes="(min-width: 768px) 50vw, 100vw"
-              className="object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-ink/60 to-transparent md:bg-gradient-to-r" />
-            <div className="absolute bottom-4 left-4 flex items-center gap-2 border border-paper/20 bg-ink/50 px-3 py-1.5 backdrop-blur-md">
-              <span className={`h-1 w-1 rounded-full ${meta.dot}`} />
-              <span className="text-[0.55rem] uppercase tracking-[0.18em] text-paper/85">
-                {meta.label}
-              </span>
-            </div>
-          </div>
-
-          <div className="p-6 sm:p-8">
-            <p className="text-[0.58rem] uppercase tracking-[0.24em] text-brass">
-              {product.collectionName} · {product.model}
-            </p>
-            <h3 className="mt-3 font-display text-3xl font-light leading-tight text-paper">
-              {product.name}
-            </h3>
-            <p className="mt-1.5 text-[0.68rem] uppercase tracking-[0.16em] text-mute">
-              {product.colorway} · {product.leather}
-            </p>
-
-            <div className="mt-5 flex items-baseline gap-3 border-y border-line/70 py-4">
-              <p className="font-display text-2xl text-paper">
-                {formatIdr(product.priceIdr)}
-              </p>
-              <p className="text-[0.7rem] text-mute">
-                {formatUsdFromIdr(product.priceIdr)}
-              </p>
-            </div>
-
-            <p className="mt-5 text-[0.86rem] leading-relaxed text-paper/60">
-              {product.description}
-            </p>
-
-            <div className="mt-6">
-              <p className="text-[0.58rem] uppercase tracking-[0.2em] text-mute">
-                {unavailable ? "Size run (reference)" : "Sizes on the shelf"}
-              </p>
-              <div className="mt-2 flex flex-wrap gap-2">
-                {sizes.map((size) => (
-                  <span
-                    key={size}
-                    className={`flex h-9 min-w-11 items-center justify-center border px-2 text-[0.72rem] ${
-                      unavailable
-                        ? "border-line/60 text-paper/30 line-through"
-                        : "border-line text-paper/80"
-                    }`}
-                  >
-                    EU {size}
-                  </span>
-                ))}
-              </div>
-            </div>
-
-            <div className="mt-6 border border-line/70 bg-ink/40 p-4">
-              <p className="text-[0.62rem] uppercase tracking-[0.18em] text-brass-light">
-                {unavailable ? "Next cutting" : meta.detail}
-              </p>
-              <p className="mt-1.5 text-[0.78rem] leading-relaxed text-paper/55">
-                {unavailable
-                  ? "This run is claimed. Join the waitlist and the studio will message you before the next hide is cut — waitlist members get first refusal."
-                  : "Includes a cotton dust bag, spare waxed laces and a tin of studio polish. Ready-to-ship pairs leave Bandung within 48 hours."}
-              </p>
-            </div>
-
-            <div className="mt-6 flex flex-col gap-2.5">
-              <a
-                href={`https://wa.me/${site.whatsapp}?text=${inquiry}`}
-                target="_blank"
-                rel="noreferrer"
-                onClick={onClose}
-                className="group flex items-center justify-between bg-brass px-5 py-4 text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-ink transition-colors hover:bg-brass-light"
-              >
-                {unavailable
-                  ? "Join the waitlist"
-                  : availability === "made_to_order"
-                    ? "Commission this pair"
-                    : "Enquire on WhatsApp"}
-                <span className="transition-transform group-hover:translate-x-1">
-                  ↗
-                </span>
-              </a>
-              <a
-                href={`mailto:${site.email}?subject=${encodeURIComponent(
-                  `Enquiry — ${product.name}`,
-                )}`}
-                onClick={onClose}
-                className="flex items-center justify-between border border-line px-5 py-4 text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-paper/80 transition-colors hover:border-paper/40 hover:text-paper"
-              >
-                Email the studio
-                <span>↗</span>
-              </a>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
   );
 }

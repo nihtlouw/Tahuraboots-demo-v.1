@@ -3,6 +3,7 @@ import { db } from "@/db";
 import { orderItems, orders, products } from "@/db/schema";
 import { isOwner, unauthorized } from "@/lib/auth";
 import { CHANNELS } from "@/lib/catalog";
+import { nextOrderNumber } from "@/lib/orders";
 
 export const dynamic = "force-dynamic";
 
@@ -89,7 +90,7 @@ export async function POST(request: Request) {
       ? (body.channel as string)
       : "web";
 
-    const orderNumber = `TB-${Date.now().toString().slice(-6)}`;
+    const orderNumber = await nextOrderNumber();
 
     const created = await db.transaction(async (tx) => {
       const [order] = await tx

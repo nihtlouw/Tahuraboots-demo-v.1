@@ -3,6 +3,7 @@ import { db } from "@/db";
 import { orders } from "@/db/schema";
 import { isOwner, unauthorized } from "@/lib/auth";
 import { ORDER_STATUSES } from "@/lib/catalog";
+import { deleteOrder, setOrderStatus } from "@/lib/orders";
 
 export const dynamic = "force-dynamic";
 
@@ -20,7 +21,6 @@ export async function PATCH(
 
   try {
     const body = (await request.json()) as { status?: string; notes?: string };
-    const patch: Record<string, unknown> = {};
 
     if (body.status !== undefined) {
       if (!ORDER_STATUSES.includes(body.status as (typeof ORDER_STATUSES)[number])) {
@@ -29,25 +29,28 @@ export async function PATCH(
           { status: 400 },
         );
       }
-      patch.status = body.status;
-    }
-    if (typeof body.notes === "string") patch.notes = body.notes.slice(0, 2000);
 
-    if (Object.keys(patch).length === 0) {
-      return Response.json({ ok: false, error: "Nothing to update." }, { status: 400 });
-    }
-
-    const [updated] = await db
-      .update(orders)
-      .set(patch)
-      .where(eq(orders.id, orderId))
-      .returning();
-
-    if (!updated) {
-      return Response.json({ ok: false, error: "Order not found." }, { status: 404 });
+      const updated = await setOrderStatus(orderId, body.status, body.notes);
+      if (!updated) {
+        return Response.json({ ok: false, error: "Order not found." }, { status: 404 });
+      }
+      return Response.json({ ok: true, order: updated });
     }
 
-    return Response.json({ ok: true, order: updated });
+    if (typeof body.notes === "string") {
+      const [updated] = await db
+        .update(orders)
+        .set({ notes: body.notes.slice(0, 2000) })
+        .where(eq(orders.id, orderId))
+        .returning();
+
+      if (!updated) {
+        return Response.json({ ok: false, error: "Order not found." }, { status: 404 });
+      }
+      return Response.json({ ok: true, order: updated });
+    }
+
+    return Response.json({ ok: false, error: "Nothing to update." }, { status: 400 });
   } catch {
     return Response.json(
       { ok: false, error: "Could not update the order." },
@@ -69,7 +72,10 @@ export async function DELETE(
   }
 
   try {
-    await db.delete(orders).where(eq(orders.id, orderId));
+    const removed = await deleteOrder(orderId);
+    if (!removed) {
+      return Response.json({ ok: false, error: "Order not found." }, { status: 404 });
+    }
     return Response.json({ ok: true });
   } catch {
     return Response.json(

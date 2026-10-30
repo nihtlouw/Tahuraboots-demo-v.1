@@ -33,7 +33,8 @@ const fraunces = localFont({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://tahuraboots.co"),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://tahuraboots.co"),
+  alternates: { canonical: "/" },
   title: {
     default: "Tahura Boots Company — Hand-welted boots from Bandung",
     template: "%s · Tahura Boots Company",
@@ -73,7 +74,16 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" className={`${inter.variable} ${fraunces.variable}`}>
-      <body className="bg-ink text-paper antialiased">{children}</body>
+      <body className="bg-ink text-paper antialiased">
+        {/* Aksesibilitas: lompat langsung ke konten tanpa melewati navigasi. */}
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:border focus:border-brass focus:bg-ink focus:px-4 focus:py-2 focus:text-[0.7rem] focus:uppercase focus:tracking-[0.16em] focus:text-paper"
+        >
+          Lewati ke konten
+        </a>
+        {children}
+      </body>
     </html>
   );
 }

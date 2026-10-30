@@ -39,6 +39,8 @@ masih kosong). Selama pengembangan, folder `drizzle/` bisa dipakai dengan
 | `DATABASE_URL` | ✅ | Connection string **pooled** (`...-pooler...`) yang dipakai aplikasi saat runtime. |
 | `DIRECT_URL` | – | Connection string langsung tanpa pooler, dipakai `drizzle-kit` untuk DDL/migration. Kalau kosong, fallback ke `DATABASE_URL`. |
 | `CRM_PASSCODE` | – | Passcode masuk `/crm`. Default pengembangan: `tahura2026`. **Ganti sebelum deploy.** |
+| `AUTH_SECRET` | – | Kunci HMAC untuk cookie sesi (`openssl rand -base64 32`). Kalau kosong, diturunkan dari `CRM_PASSCODE`. |
+| `NEXT_PUBLIC_SITE_URL` | – | URL publik untuk canonical, sitemap, dan structured data. |
 
 ---
 
@@ -95,6 +97,20 @@ public/images/                 # foto produk & editorial
 public/fonts/                  # Inter + Fraunces (woff2, lokal)
 ```
 
+### Keamanan sesi CRM
+
+`/crm` dilindungi cookie sesi bertanda tangan HMAC-SHA256 (`<expiry>.<nonce>.<sig>`),
+divalidasi di tiga lapis:
+
+1. **`src/proxy.ts`** (pengganti `middleware.ts` di Next 16) menolak request
+   `/crm/*` tanpa sesi sah — halaman tidak pernah dieksekusi.
+2. **`app/crm/layout.tsx`** menampilkan form login kalau belum masuk.
+3. **Setiap page CRM** memanggil `isOwner()` sebelum query, sehingga data tidak
+   ikut bocor di payload RSC sekalipun layout di-bypass.
+
+Login dibatasi 8 percobaan / 10 menit per IP, dan passcode dibandingkan dengan
+waktu konstan.
+
 ### Skema database
 
 | Tabel | Isi |
@@ -103,6 +119,11 @@ public/fonts/                  # Inter + Fraunces (woff2, lokal)
 | `orders` | Pesanan: nomor, pelanggan, kanal, status, total. |
 | `order_items` | Baris pesanan (FK ke `orders` dan `products`). |
 | `leads` | Inquiry/CRM: kontak, minat produk, sumber, status, nilai estimasi. |
+| `subscribers` | "The cutting list": email newsletter & waitlist produk (unik per email). |
+
+Semua tabel punya index untuk kolom yang dipakai filter/sortir CRM (`status`,
+`created_at`, `order_id`, dst.). Nomor pesanan memakai sequence
+`order_number_seq` dengan format `TB-<YYMMDD>-<seq>`.
 
 ---
 
@@ -119,6 +140,20 @@ public/fonts/                  # Inter + Fraunces (woff2, lokal)
 | `npm run db:studio` | Drizzle Studio (GUI database). |
 | `npm run db:check` | Verifikasi koneksi + daftar tabel & jumlah baris. Exit code 1 kalau skema belum lengkap. |
 | `npm run pages:build` | Rekam snapshot UI statis ke `docs/` untuk GitHub Pages (butuh server jalan di :3000). |
+
+### Fitur CRM
+
+- **Orders** — filter status, pencarian, sortir (tanggal/total/pelanggan),
+  pagination 8 baris, pilih baris + ubah status massal, ekspor CSV.
+- **Products** — pencarian, sortir stok/harga/terjual, ekspor CSV, tambah/edit/
+  hapus, penyesuaian stok cepat.
+- **Leads** — papan kanban per tahap, pencarian, ekspor CSV, ubah status dan
+  catatan.
+- **Dashboard** — omzet, pipeline, stok kritis, best seller, dan ringkasan
+  "cutting list" (newsletter/waitlist).
+
+Pembatalan atau penghapusan pesanan otomatis mengembalikan stok dan
+`units_sold`, sehingga angka di storefront tetap konsisten.
 
 ---
 
