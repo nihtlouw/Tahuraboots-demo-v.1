@@ -2,6 +2,7 @@ import { desc } from "drizzle-orm";
 import { db } from "@/db";
 import { products } from "@/db/schema";
 import { ensureSeed } from "@/db/seed";
+import { isOwner } from "@/lib/auth";
 import { CrmHeader } from "@/components/crm/ui";
 import {
   ProductsManager,
@@ -11,6 +12,10 @@ import {
 export const dynamic = "force-dynamic";
 
 export default async function CrmProductsPage() {
+  // Lapisan kedua: layout sudah menyembunyikan UI, tapi tanpa guard ini
+  // komponen halaman tetap dieksekusi dan datanya bocor di payload RSC.
+  if (!(await isOwner())) return null;
+
   await ensureSeed();
 
   const rows = await db

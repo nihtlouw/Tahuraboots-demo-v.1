@@ -1,10 +1,24 @@
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
+import {
+  OWNER_COOKIE,
+  checkRateLimit,
+  clearRateLimit,
+  passcode,
+  safeEqual,
+  sessionCookieOptions,
+  verifySessionToken,
+} from "@/lib/session";
 
-export const OWNER_COOKIE = "tahura_owner";
+export { OWNER_COOKIE, passcode, sessionCookieOptions, safeEqual };
+export {
+  checkRateLimit as checkLoginRateLimit,
+  clearRateLimit as clearLoginRateLimit,
+  verifySessionToken,
+};
 
 export async function isOwner() {
   const store = await cookies();
-  return store.get(OWNER_COOKIE)?.value === "owner";
+  return verifySessionToken(store.get(OWNER_COOKIE)?.value);
 }
 
 export async function unauthorized() {
@@ -14,6 +28,8 @@ export async function unauthorized() {
   );
 }
 
-export function passcode() {
-  return process.env.CRM_PASSCODE ?? "tahura2026";
+export async function clientKey() {
+  const store = await headers();
+  const forwarded = store.get("x-forwarded-for") ?? "";
+  return forwarded.split(",")[0]?.trim() || store.get("x-real-ip") || "local";
 }

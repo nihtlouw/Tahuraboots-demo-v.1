@@ -8,6 +8,38 @@ import { navLinks, site } from "@/lib/site";
 export function Footer() {
   const [email, setEmail] = useState("");
   const [joined, setJoined] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function subscribe(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError(null);
+
+    if (!email.includes("@")) {
+      setError("That email address does not look right.");
+      return;
+    }
+
+    setBusy(true);
+    try {
+      const response = await fetch("/api/subscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, source: "footer" }),
+      });
+      const data = (await response.json()) as { ok?: boolean; error?: string };
+      if (!response.ok || !data.ok) {
+        throw new Error(data.error ?? "Could not save your address.");
+      }
+      setJoined(true);
+    } catch (caught) {
+      setError(
+        caught instanceof Error ? caught.message : "Could not save your address.",
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
 
   return (
     <footer className="relative overflow-hidden border-t border-line/70 bg-ink-2">
@@ -110,10 +142,7 @@ export function Footer() {
               </p>
             ) : (
               <form
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  if (email.includes("@")) setJoined(true);
-                }}
+                onSubmit={subscribe}
                 className="mt-4 flex border border-line focus-within:border-brass/60"
               >
                 <input
@@ -127,11 +156,17 @@ export function Footer() {
                 />
                 <button
                   type="submit"
-                  className="shrink-0 bg-brass px-4 text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-ink transition-colors hover:bg-brass-light"
+                  disabled={busy}
+                  className="shrink-0 bg-brass px-4 text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-ink transition-colors hover:bg-brass-light disabled:cursor-wait disabled:opacity-60"
                 >
-                  Join
+                  {busy ? "…" : "Join"}
                 </button>
               </form>
+            )}
+            {error && (
+              <p role="alert" className="mt-2 text-[0.68rem] text-[#d68b74]">
+                {error}
+              </p>
             )}
             <div className="mt-5 flex gap-2">
               <a

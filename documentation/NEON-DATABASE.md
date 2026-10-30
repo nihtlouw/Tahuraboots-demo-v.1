@@ -13,6 +13,7 @@
 | Port | `5432` |
 | SSL | wajib (`sslmode=require`) |
 | ORM | Drizzle ORM (`drizzle-orm` + driver `pg`) |
+| Pool | `max: 5`, `idleTimeoutMillis: 30s`, SSL eksplisit untuk host `neon.tech` |
 
 Password **hanya** disimpan di `.env` lokal dan environment variables hosting.
 Repo ini public — credential tidak pernah di-commit.
@@ -51,8 +52,12 @@ npm run db:push           # drizzle-kit membandingkan schema.ts vs database
 **Opsi B — Neon SQL Editor**
 
 1. Buka <https://console.neon.tech> → pilih project → tab **SQL Editor**.
-2. Buka `drizzle/0000_sleepy_valeria_richards.sql` di repo.
-3. Hapus komentar `--> statement-breakpoint` (boleh tetap ada juga), lalu Run.
+2. Jalankan file migration **berurutan**:
+   - `drizzle/0000_sleepy_valeria_richards.sql` (4 tabel awal)
+   - `drizzle/0001_hardening.sql` (tabel `subscribers`, 14 index, dan sequence
+     `order_number_seq` untuk nomor pesanan)
+3. Teks `--> statement-breakpoint` boleh dibiarkan; SQL Editor menjalankan
+   seluruh isi skrip.
 
 Setelah tabel ada, buka halaman utama aplikasi — data contoh akan terisi
 otomatis lewat `ensureSeed()` di `src/db/seed.ts`.

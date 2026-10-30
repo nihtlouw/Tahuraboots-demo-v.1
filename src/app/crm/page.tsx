@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { desc, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { leads, orderItems, orders, products } from "@/db/schema";
+import { leads, orderItems, orders, products, subscribers } from "@/db/schema";
 import { ensureSeed } from "@/db/seed";
+import { isOwner } from "@/lib/auth";
 import { resolveAvailability, stockTone } from "@/lib/catalog";
 import { formatIdr, formatIdrCompact, formatShortDate, timeAgo } from "@/lib/format";
 import {
@@ -46,10 +47,21 @@ function weeklySeries(
 }
 
 export default async function CrmOverviewPage() {
+  // Lapisan kedua: layout sudah menyembunyikan UI, tapi tanpa guard ini
+  // komponen halaman tetap dieksekusi dan datanya bocor di payload RSC.
+  if (!(await isOwner())) return null;
+
   await ensureSeed();
 
-  const [orderRows, productRows, leadRows, recentOrders, topProducts] =
-    await Promise.all([
+  const [
+    orderRows,
+    productRows,
+    leadRows,
+    recentOrders,
+    topProducts,
+    subscriberRows,
+    recentSubscribers,
+  ] = await Promise.all([
       db
         .select({
           id: orders.id,
@@ -71,6 +83,20 @@ export default async function CrmOverviewPage() {
         .groupBy(orderItems.productName)
         .orderBy(desc(sql`sum(${orderItems.quantity})`))
         .limit(5),
+      db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(subscribers),
+      db
+        .select({
+          id: subscribers.id,
+          email: subscribers.email,
+          source: subscribers.source,
+          interest: subscribers.interest,
+          createdAt: subscribers.createdAt,
+        })
+        .from(subscribers)
+        .orderBy(desc(subscribers.createdAt))
+        .limit(6),
     ]);
 
   const revenue = orderRows
@@ -330,6 +356,28 @@ export default async function CrmOverviewPage() {
               {soldOut.length + lowStock.length === 0 && (
                 <li className="px-4 py-6 text-center text-[0.72rem] text-[#8b8173]">
                   Every style is comfortably in stock.
+                </li>
+              )}
+            </ul>
+          </Panel>
+
+          <Panel
+            title="The cutting list"
+            subtitle={`${subscriberRows.length} signup${subscriberRows.length === 1 ? "" : "s"} · newsletter & waitlist`}
+          >
+            <ul className="divide-y divide-crm-line/70">
+              {recentSubscribers.map((row) => (
+                <li key={row.id} className="px-4 py-2.5">
+                  <p className="truncate text-[0.72rem] text-[#3c332a]">{row.email}</p>
+                  <p className="mt-0.5 truncate text-[0.6rem] text-[#a19683]">
+                    {row.source}
+                    {row.interest ? ` · ${row.interest}` : ""} · {timeAgo(row.createdAt)}
+                  </p>
+                </li>
+              ))}
+              {recentSubscribers.length === 0 && (
+                <li className="px-4 py-6 text-center text-[0.72rem] text-[#8b8173]">
+                  No signups yet — the form lives in the site footer.
                 </li>
               )}
             </ul>

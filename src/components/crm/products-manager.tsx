@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { resolveAvailability, PRODUCT_STATUSES, productStatusLabels } from "@/lib/catalog";
 import { formatIdr } from "@/lib/format";
+import { csvStamp, downloadCsv } from "@/lib/csv";
 
 export type CrmProduct = {
   id: number;
@@ -74,9 +75,11 @@ export function ProductsManager({ initial }: { initial: CrmProduct[] }) {
   const [busy, setBusy] = useState<number | "new" | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [sort, setSort] = useState<"shelf" | "price-desc" | "price-asc" | "sold" | "name">("shelf");
+  const [toast, setToast] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
-    return items.filter((item) => {
+    const rows = items.filter((item) => {
       const matchesQuery =
         !query.trim() ||
         `${item.name} ${item.model} ${item.colorway} ${item.leather}`
@@ -88,7 +91,16 @@ export function ProductsManager({ initial }: { initial: CrmProduct[] }) {
       if (filter === "low") return item.stock > 0 && item.stock <= 2;
       return item.status === filter;
     });
-  }, [items, query, filter]);
+
+    const sorted = [...rows];
+    if (sort === "price-desc") sorted.sort((a, b) => b.priceIdr - a.priceIdr);
+    else if (sort === "price-asc") sorted.sort((a, b) => a.priceIdr - b.priceIdr);
+    else if (sort === "sold") sorted.sort((a, b) => b.unitsSold - a.unitsSold);
+    else if (sort === "name") sorted.sort((a, b) => a.name.localeCompare(b.name));
+    else sorted.sort((a, b) => a.stock - b.stock || a.name.localeCompare(b.name));
+
+    return sorted;
+  }, [items, query, filter, sort]);
 
   const totals = useMemo(() => {
     const units = items.reduce((sum, item) => sum + item.stock, 0);
@@ -256,6 +268,43 @@ export function ProductsManager({ initial }: { initial: CrmProduct[] }) {
             placeholder="Search styles, leathers…"
             className="crm-input !w-full sm:!w-56"
           />
+          <select
+            value={sort}
+            onChange={(event) => setSort(event.target.value as typeof sort)}
+            aria-label="Sort pairs"
+            className="rounded-lg border border-crm-line bg-white px-2.5 py-2.5 text-[0.64rem] text-[#3c332a] outline-none focus:border-[#b08c52]"
+          >
+            <option value="shelf">Shelf · low stock first</option>
+            <option value="sold">Best selling</option>
+            <option value="price-desc">Price · high to low</option>
+            <option value="price-asc">Price · low to high</option>
+            <option value="name">Name A–Z</option>
+          </select>
+          <button
+            type="button"
+            onClick={() => {
+              const ok = downloadCsv(
+                csvStamp("tahura-pairs"),
+                filtered.map((product) => ({
+                  slug: product.id,
+                  name: product.name,
+                  model: product.model,
+                  leather: product.leather,
+                  colorway: product.colorway,
+                  collection: product.collectionName,
+                  priceIdr: product.priceIdr,
+                  stock: product.stock,
+                  status: product.status,
+                  unitsSold: product.unitsSold,
+                  sizes: product.sizes,
+                })),
+              );
+              setToast(ok ? `${filtered.length} pairs diekspor ke CSV.` : "Tidak ada baris untuk diekspor.");
+            }}
+            className="shrink-0 rounded-lg border border-crm-line bg-white px-3 py-2.5 text-[0.62rem] font-semibold uppercase tracking-[0.12em] text-[#5f5548] transition-colors hover:border-[#c6b699]"
+          >
+            Export CSV
+          </button>
           <button
             type="button"
             onClick={() => setDraft({ ...emptyDraft })}
@@ -270,6 +319,13 @@ export function ProductsManager({ initial }: { initial: CrmProduct[] }) {
         <div className="flex items-center justify-between gap-3 rounded-lg border border-[#dfc0bb] bg-[#f1dedb] px-4 py-2.5 text-[0.76rem] text-[#88423a]">
           {error}
           <button type="button" onClick={() => setError(null)} className="font-semibold">✕</button>
+        </div>
+      )}
+
+      {toast && (
+        <div role="status" className="flex items-center justify-between gap-3 rounded-lg border border-[#cbd8bf] bg-[#eef3e6] px-4 py-2.5 text-[0.76rem] text-[#4c6034]">
+          {toast}
+          <button type="button" onClick={() => setToast(null)} className="font-semibold">✕</button>
         </div>
       )}
 

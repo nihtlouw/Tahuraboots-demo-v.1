@@ -1,5 +1,7 @@
 export const site = {
   name: "Tahura Boots Company",
+  /** Ganti lewat NEXT_PUBLIC_SITE_URL saat deploy ke domain sendiri. */
+  url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://tahuraboots.co",
   shortName: "Tahura",
   tagline: "Hand-welted in Bandung",
   founded: 2013,

@@ -2,6 +2,7 @@ import Image from "next/image";
 import { desc } from "drizzle-orm";
 import { db } from "@/db";
 import { products } from "@/db/schema";
+import { resolveAvailability } from "@/lib/catalog";
 import { ensureSeed } from "@/db/seed";
 import { SiteHeader } from "@/components/site/site-header";
 import { Hero } from "@/components/site/hero";
@@ -44,10 +45,62 @@ export default async function HomePage() {
     featured: product.featured,
   }));
 
+  // Structured data: membantu Google menampilkan katalog sebagai rich result.
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": `${site.url}/#organization`,
+        name: site.name,
+        url: site.url,
+        email: site.email,
+        foundingDate: String(site.founded),
+        address: {
+          "@type": "PostalAddress",
+          streetAddress: site.addressLine1,
+          addressLocality: "Bandung",
+          addressRegion: "West Java",
+          addressCountry: "ID",
+        },
+      },
+      {
+        "@type": "ItemList",
+        name: "Tahura Boots collection",
+        itemListElement: storefrontProducts.map((product, index) => ({
+          "@type": "ListItem",
+          position: index + 1,
+          item: {
+            "@type": "Product",
+            name: product.name,
+            description: product.description,
+            image: `${site.url}${product.imageUrl}`,
+            brand: { "@type": "Brand", name: site.name },
+            offers: {
+              "@type": "Offer",
+              price: product.priceIdr,
+              priceCurrency: "IDR",
+              availability:
+                resolveAvailability(product) === "ready"
+                  ? "https://schema.org/InStock"
+                  : resolveAvailability(product) === "made_to_order"
+                    ? "https://schema.org/PreOrder"
+                    : "https://schema.org/SoldOut",
+            },
+          },
+        })),
+      },
+    ],
+  };
+
   return (
     <div id="top" className="min-h-screen bg-ink">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+      />
       <SiteHeader />
-      <main>
+      <main id="main-content">
         <Hero />
         <Marquee />
 
