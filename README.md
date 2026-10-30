@@ -32,6 +32,14 @@ Saat halaman pertama kali dibuka, tabel `products`, `orders`, `order_items`, dan
 masih kosong). Selama pengembangan, folder `drizzle/` bisa dipakai dengan
 `npm run db:push` alih-alih `db:migrate`.
 
+Katalog contoh berisi **20 siluet**: 8 model awal di `seedProducts`, ditambah
+**12 siluet rilis kedua** di `seedCatalogExtras` (western, mountain boot, tall
+canvas, gaucho/strap, Norwegian welt, logger, derby, suede) yang sebelumnya
+hanya ada di feed Instagram studio. Produk tambahan disisipkan oleh
+`topUpCatalogExtras()` dengan `onConflictDoNothing` pada `slug`, jadi database
+yang sudah berjalan — termasuk yang ada di Vercel — otomatis menerimanya pada
+request berikutnya tanpa menyentuh pesanan atau lead yang sudah ada.
+
 ### Variabel lingkungan
 
 | Variabel | Wajib | Keterangan |
@@ -94,6 +102,7 @@ src/
 └─ lib/                        # auth, katalog, format, data situs
 drizzle/                       # migration SQL (hasil drizzle-kit generate)
 public/images/                 # foto produk & editorial
+public/images/catalog/         # 12 foto siluet rilis kedua (dibuat scripts/ig-photos.py)
 public/fonts/                  # Inter + Fraunces (woff2, lokal)
 ```
 

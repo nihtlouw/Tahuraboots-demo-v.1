@@ -1,4 +1,4 @@
-import { sql } from "drizzle-orm";
+import { inArray, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { ensureSchema, isMissingRelationError, resetSchemaCache } from "@/db/ensure-schema";
 import { leads, orderItems, orders, products } from "@/db/schema";
@@ -154,6 +154,221 @@ const seedProducts = [
     sizes: "39,40,41,42,43",
     featured: false,
     unitsSold: 31,
+  },
+] as const;
+
+/**
+ * Rilis kedua katalog: dua belas siluet yang sebelumnya hanya ada di feed
+ * Instagram studio. Foto di `public/images/catalog/` berasal dari arsip studio
+ * dan sudah dipotong bersih dari elemen UI aplikasi.
+ *
+ * Dipisahkan dari `seedProducts` supaya deployment yang sudah berjalan bisa
+ * ditambahi tanpa menyentuh produk, pesanan, atau lead yang sudah ada.
+ */
+const seedCatalogExtras = [
+  {
+    slug: "ciwidey-western",
+    name: "Ciwidey Western",
+    model: "Western Boot",
+    leather: "Oiled Javan Cowhide",
+    colorway: "Tobacco Tan",
+    description:
+      "A full-height western boot with hand-stitched eagle and flame panels on the shaft. Oiled Javan cowhide over a stacked Cuban heel, built on a snip toe — the loudest pair we make and the one that photographs best.",
+    priceIdr: 4150000,
+    stock: 2,
+    status: "ready",
+    imageUrl: "/images/catalog/ciwidey-western.jpg",
+    collectionName: "Western Line",
+    sizes: "39,40,41,42,43,44,45",
+    featured: true,
+    unitsSold: 9,
+  },
+  {
+    slug: "cibaduyut-show-western",
+    name: "Cibaduyut Show Western",
+    model: "Custom Western Boot",
+    leather: "Black Calf with Hand Embroidery",
+    colorway: "Black / Multicolour",
+    description:
+      "A custom commission: black calf shafts hand-embroidered in colour, finished with brass smiley studs on both sides. Every pair is drawn with the customer before a single stitch goes in — six to eight weeks on the bench.",
+    priceIdr: 4450000,
+    stock: 0,
+    status: "made_to_order",
+    imageUrl: "/images/catalog/cibaduyut-western.jpg",
+    collectionName: "Western Line",
+    sizes: "39,40,41,42,43,44,45",
+    featured: false,
+    unitsSold: 4,
+  },
+  {
+    slug: "maribaya-mountain",
+    name: "Maribaya Mountain",
+    model: "Mountain Boot",
+    leather: "Brown Calf & Tan Suede",
+    colorway: "Chestnut / Tan",
+    description:
+      "A 1940s alpine pattern rebuilt at the bench: two-tone upper, padded tan collar, D-ring lacing and a lugged commando sole on a heavy leather welt. Made for the trail up to Maribaya and the walk back down.",
+    priceIdr: 3850000,
+    stock: 3,
+    status: "ready",
+    imageUrl: "/images/catalog/maribaya-mountain.jpg",
+    collectionName: "Field Series",
+    sizes: "40,41,42,43,44,45",
+    featured: true,
+    unitsSold: 14,
+  },
+  {
+    slug: "tangkuban-mountain",
+    name: "Tangkuban Mountain",
+    model: "Mountain Boot",
+    leather: "Burgundy Calf",
+    colorway: "Oxblood Burgundy",
+    description:
+      "The Maribaya pattern in a deeper colourway: burgundy calf, tan padded collar and the same D-ring lacing. The welt is stitched twice by hand, so it can be rebuilt rather than replaced.",
+    priceIdr: 3950000,
+    stock: 2,
+    status: "ready",
+    imageUrl: "/images/catalog/tangkuban-mountain.jpg",
+    collectionName: "Field Series",
+    sizes: "40,41,42,43,44,45",
+    featured: false,
+    unitsSold: 6,
+  },
+  {
+    slug: "riau-canvas-tall",
+    name: "Riau Canvas Tall",
+    model: "Tall Lace Boot",
+    leather: "Brown Calf & Charcoal Canvas",
+    colorway: "Brown / Charcoal",
+    description:
+      "Nine inches of canvas shaft paneled into a calf-leather vamp, with a full-length zip at the back so it goes on in one motion. Wedge sole, contrast piping, and a toe cap that takes a shine.",
+    priceIdr: 3150000,
+    stock: 2,
+    status: "ready",
+    imageUrl: "/images/catalog/riau-canvas.jpg",
+    collectionName: "Atelier Series",
+    sizes: "39,40,41,42,43,44,45",
+    featured: false,
+    unitsSold: 8,
+  },
+  {
+    slug: "pasteur-gaucho",
+    name: "Pasteur Gaucho",
+    model: "Gaucho Ankle Boot",
+    leather: "Cognac Pull-Up",
+    colorway: "Cognac",
+    description:
+      "A tall-shafted ankle boot closed with a single brass buckle and no lacing at all. Cognac pull-up over a stacked leather heel — the pair that dresses up a plain trouser without looking formal.",
+    priceIdr: 3050000,
+    stock: 4,
+    status: "ready",
+    imageUrl: "/images/catalog/pasteur-gaucho.jpg",
+    collectionName: "Atelier Series",
+    sizes: "39,40,41,42,43,44",
+    featured: true,
+    unitsSold: 17,
+  },
+  {
+    slug: "asia-afrika-strap",
+    name: "Asia Afrika Strap",
+    model: "Strap Ankle Boot",
+    leather: "Spit-Shined Oxblood Calf",
+    colorway: "Oxblood No. 8",
+    description:
+      "A single-strap ankle boot with the shaft cut high and the toe drawn long. The oxblood calf is burnished by hand to a mirror finish, so it reads almost black indoors and deep red in daylight.",
+    priceIdr: 2850000,
+    stock: 3,
+    status: "ready",
+    imageUrl: "/images/catalog/asiaafrika-strap.jpg",
+    collectionName: "Atelier Series",
+    sizes: "39,40,41,42,43,44,45",
+    featured: false,
+    unitsSold: 11,
+  },
+  {
+    slug: "setiabudi-service",
+    name: "Setiabudi Service",
+    model: "Norwegian Welt Service Boot",
+    leather: "Olive Javan Pull-Up",
+    colorway: "Olive",
+    description:
+      "Our Norwegian split storm welt, stitched 360 degrees in chain stitch, on olive Javan pull-up. Two rows of welt stitching and a commando sole mean this is the pair that survives the wet season.",
+    priceIdr: 3650000,
+    stock: 5,
+    status: "ready",
+    imageUrl: "/images/catalog/setiabudi-service.jpg",
+    collectionName: "Core Line",
+    sizes: "40,41,42,43,44,45",
+    featured: true,
+    unitsSold: 23,
+  },
+  {
+    slug: "gedebage-logger",
+    name: "Gedebage Logger",
+    model: "Logger Boot",
+    leather: "Dark Brown Oiled Cowhide",
+    colorway: "Espresso",
+    description:
+      "A nine-inch logger with a full wedge sole and contrast thread following every panel. Ten pairs of eyelets, a bumper toe and a heel you can walk a field in all day.",
+    priceIdr: 3750000,
+    stock: 1,
+    status: "ready",
+    imageUrl: "/images/catalog/gedebage-logger.jpg",
+    collectionName: "Field Series",
+    sizes: "40,41,42,43,44,45",
+    featured: false,
+    unitsSold: 7,
+  },
+  {
+    slug: "antapani-derby",
+    name: "Antapani Derby",
+    model: "Lace-Up Derby",
+    leather: "Shrunken Grey Cowhide",
+    colorway: "Speckled Taupe",
+    description:
+      "A low lace-up in shrunken grey cowhide, where the grain breaks into a marbled texture as it wears. Pale leather midsole and white contrast stitching — the quietest, most textured pair on the shelf.",
+    priceIdr: 2750000,
+    stock: 3,
+    status: "ready",
+    imageUrl: "/images/catalog/antapani-derby.jpg",
+    collectionName: "Core Line",
+    sizes: "39,40,41,42,43,44",
+    featured: false,
+    unitsSold: 13,
+  },
+  {
+    slug: "ujungberung-mustard",
+    name: "Ujungberung Mustard",
+    model: "Suede Derby",
+    leather: "Mustard Suede",
+    colorway: "Mustard",
+    description:
+      "Six eyelets, a long almond toe and not a single panel wasted. Mustard suede over a pale leather sole — a seasonal colour we cut in small runs and rarely repeat.",
+    priceIdr: 2350000,
+    stock: 0,
+    status: "made_to_order",
+    imageUrl: "/images/catalog/ujungberung-suede.jpg",
+    collectionName: "Core Line",
+    sizes: "38,39,40,41,42,43,44",
+    featured: false,
+    unitsSold: 5,
+  },
+  {
+    slug: "cibeunying-chukka",
+    name: "Cibeunying Chukka",
+    model: "Chukka",
+    leather: "Crackled Dark Cowhide",
+    colorway: "Espresso Black",
+    description:
+      "A four-eyelet chukka in crackled espresso cowhide with a slim leather sole and a stacked heel. Light enough to wear all day, dark enough to wear with anything.",
+    priceIdr: 2300000,
+    stock: 2,
+    status: "ready",
+    imageUrl: "/images/catalog/cibeunying-chukka.jpg",
+    collectionName: "Core Line",
+    sizes: "39,40,41,42,43,44,45",
+    featured: false,
+    unitsSold: 10,
   },
 ] as const;
 
@@ -569,6 +784,41 @@ async function runSeed() {
 }
 
 /**
+ * Tambahkan produk rilis kedua ke database yang sudah berjalan.
+ *
+ * `runSeed()` hanya mengisi saat tabel produk masih kosong, sehingga deployment
+ * yang sudah hidup tidak akan pernah menerima produk baru. Fungsi ini menutup
+ * celah itu: hanya baris yang slug-nya belum ada yang disisipkan, dan produk,
+ * pesanan, atau lead yang sudah ada tidak disentuh. Aman dipanggil berulang.
+ *
+ * Sengaja tidak di-cache: kalau database di-reset, produk tambahan harus bisa
+ * masuk lagi pada request berikutnya.
+ */
+async function topUpCatalogExtras() {
+  const slugs = seedCatalogExtras.map((product) => product.slug);
+
+  const existing = await db
+    .select({ slug: products.slug })
+    .from(products)
+    .where(inArray(products.slug, slugs));
+
+  const present = new Set(existing.map((row) => row.slug));
+  const missing = seedCatalogExtras.filter((product) => !present.has(product.slug));
+  if (missing.length === 0) return;
+
+  await db.transaction(async (tx) => {
+    // Kunci terpisah dari seed utama: dua cold start bersamaan tetap aman.
+    await tx.execute(sql`select pg_advisory_xact_lock(hashtext('tahura:catalog-extras'))`);
+    await tx
+      .insert(products)
+      .values(missing.map((product) => ({ ...product })))
+      .onConflictDoNothing();
+  });
+
+  console.info(`[seed] ${missing.length} produk katalog baru ditambahkan`);
+}
+
+/**
  * Siapkan database: buat skema bila belum ada, lalu isi data contoh.
  *
  * Idempotent dan aman dipanggil dari page/route mana pun. Di deployment baru
@@ -580,6 +830,7 @@ export function ensureSeed() {
 
   const promise = ensureSchema()
     .then(() => runSeed())
+    .then(() => topUpCatalogExtras())
     .catch(async (error) => {
       // Tabel hilang di tengah jalan (database di-reset / branch Neon baru):
       // buat ulang skema lalu ulangi sekali. Bukan kegagalan permanen.
@@ -589,6 +840,7 @@ export function ensureSeed() {
       resetSchemaCache();
       await ensureSchema({ force: true });
       await runSeed();
+      await topUpCatalogExtras();
     })
     .finally(() => {
       seedInflight = null;

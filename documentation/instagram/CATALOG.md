@@ -443,6 +443,33 @@ satu keluarga kalau memang dua warna (mis. two-tone).
 
 ---
 
+## Yang sudah dipakai di storefront
+
+Dua belas ubin di bawah ini sudah masuk katalog toko sebagai produk
+`seedCatalogExtras` (`src/db/seed.ts`) dengan foto hasil
+`scripts/ig-photos.py` — bagian atas gambar dipotong tepat di bawah ikon
+carousel, jadi tidak ada piksel yang dikarang.
+
+| Kode | Produk (slug) | Koleksi |
+|---|---|---|
+| TB-14 | `ciwidey-western` | Western Line |
+| TB-19 | `cibaduyut-show-western` | Western Line |
+| TB-05 | `maribaya-mountain` | Field Series |
+| TB-23 | `tangkuban-mountain` | Field Series |
+| TB-22 | `gedebage-logger` | Field Series |
+| TB-07 | `riau-canvas-tall` | Atelier Series |
+| TB-09 | `pasteur-gaucho` | Atelier Series |
+| TB-17 | `asia-afrika-strap` | Atelier Series |
+| TB-20 | `setiabudi-service` | Core Line |
+| TB-11 | `antapani-derby` | Core Line |
+| TB-15 | `ujungberung-mustard` | Core Line |
+| TB-04 | `cibeunying-chukka` | Core Line |
+
+Sisa 12 ubin masih arsip: belum ada foto produk yang layak untuk kartu
+toko, dan beberapa duplikat siluet dengan model yang sudah ada.
+
+---
+
 ## Kamus spesifikasi resmi (dari caption akun)
 
 Istilah di bawah ini diambil **verbatim** dari caption postingan terbaru

@@ -21,6 +21,22 @@ DATA = json.loads((ROOT / "catalog.json").read_text())
 ITEMS = DATA["items"]
 STATS = DATA["stats"]
 
+# kode ubin IG -> slug produk storefront, dipakai di tabel "Yang sudah dipakai".
+USED_IN_STORE = [
+    ("TB-14", "ciwidey-western", "Western Line"),
+    ("TB-19", "cibaduyut-show-western", "Western Line"),
+    ("TB-05", "maribaya-mountain", "Field Series"),
+    ("TB-23", "tangkuban-mountain", "Field Series"),
+    ("TB-22", "gedebage-logger", "Field Series"),
+    ("TB-07", "riau-canvas-tall", "Atelier Series"),
+    ("TB-09", "pasteur-gaucho", "Atelier Series"),
+    ("TB-17", "asia-afrika-strap", "Atelier Series"),
+    ("TB-20", "setiabudi-service", "Core Line"),
+    ("TB-11", "antapani-derby", "Core Line"),
+    ("TB-15", "ujungberung-mustard", "Core Line"),
+    ("TB-04", "cibeunying-chukka", "Core Line"),
+]
+
 FONT = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
 FONT_BOLD = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
 
@@ -145,6 +161,23 @@ def build_markdown() -> Path:
         a(f"- **Catatan komersial:** {item['use']}")
         a("")
 
+    a("---")
+    a("")
+    a("## Yang sudah dipakai di storefront")
+    a("")
+    a("Dua belas ubin di bawah ini sudah masuk katalog toko sebagai produk")
+    a("`seedCatalogExtras` (`src/db/seed.ts`) dengan foto hasil")
+    a("`scripts/ig-photos.py` — bagian atas gambar dipotong tepat di bawah ikon")
+    a("carousel, jadi tidak ada piksel yang dikarang.")
+    a("")
+    a("| Kode | Produk (slug) | Koleksi |")
+    a("|---|---|---|")
+    for code, slug, collection in USED_IN_STORE:
+        a(f"| {code} | `{slug}` | {collection} |")
+    a("")
+    a("Sisa 12 ubin masih arsip: belum ada foto produk yang layak untuk kartu")
+    a("toko, dan beberapa duplikat siluet dengan model yang sudah ada.")
+    a("")
     a("---")
     a("")
     a("## Kamus spesifikasi resmi (dari caption akun)")
