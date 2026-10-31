@@ -1,7 +1,12 @@
 # Video promo Tahura Boots
 
-Video demo 46,8 detik (1920×1080, 30 fps, H.264 + AAC) yang memakai brand, foto,
-harga, dan struktur layar asli proyek ini — storefront customer lalu CRM owner.
+Video demo yang memakai brand, foto, harga, dan struktur layar asli proyek ini —
+storefront customer lalu CRM owner. Dua format:
+
+| Berkas hasil | Ukuran | Durasi | Untuk |
+| --- | --- | --- | --- |
+| `tahura-demo.mp4` | 1920×1080 | 46,8 dtk | website, YouTube, presentasi |
+| `tahura-demo-9x16.mp4` | 1080×1920 | 33,6 dtk | TikTok, Reels, Shorts |
 
 Script di folder ini merender video dari nol dengan Pillow + numpy + ffmpeg
 (tidak ada browser, tidak ada layanan desain eksternal).
@@ -22,6 +27,10 @@ python tools/promo/promo.py stills 2.2 13.5 26 38
 
 # 3. render penuh → promo-out/tahura-demo.mp4 (±7 menit di CPU 2 core)
 python tools/promo/promo.py render
+
+# 4. versi vertikal 9:16 untuk TikTok/Reels → promo-out/tahura-demo-9x16.mp4
+python tools/promo/promo_portrait.py stills 2.5 11 21   # pratinjau
+python tools/promo/promo_portrait.py render
 ```
 
 Keluaran default ada di `promo-out/` (gitignored). Ubah dengan variabel
@@ -36,8 +45,13 @@ lingkungan `PROMO_OUT` dan `PROMO_FONTS`.
 | `promo.py` | 8 adegan, timeline crossfade, audio sintetis, encode ffmpeg |
 | `make_fonts.py` | konversi `public/fonts/*.woff2` → TTF di `tools/promo/fonts/` |
 
-Urutan adegan: brand → storefront → katalog → detail produk → CRM desktop →
-CRM di ponsel → fitur owner → outro (URL demo).
+Urutan adegan landscape: brand → storefront → katalog → detail produk → CRM
+desktop → CRM di ponsel → fitur owner → outro (URL demo).
+
+Urutan adegan vertikal (33,6 dtk, tempo musik 1,6 dtk): hook full-bleed → katalog
+di ponsel → produk full-bleed + CTA WhatsApp → CRM desktop → CRM di ponsel →
+fitur owner → outro "LINK DI BIO". Area bawah ±300 px dan kanan ±120 px sengaja
+dibiarkan kosong karena tertutup UI TikTok.
 
 Foto produk dibaca langsung dari `public/images/` (8 `boot-*.jpg` dan
 `catalog/*.jpg`), jadi kalau aset katalog diganti, video ikut berubah. Harga dan
