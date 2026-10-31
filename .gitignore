@@ -59,3 +59,7 @@ documentation/instagram/katalog-standalone.html
 
 # Cache model AI (Real-ESRGAN ~64 MB) — diunduh ulang oleh scripts/ig-restore.py
 .cache/
+
+# Video promo — hasil render bisa dibangun ulang dengan tools/promo
+promo-out/
+tools/promo/fonts/
