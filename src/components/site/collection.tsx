@@ -190,16 +190,22 @@ export function Collection({ products }: { products: CollectionProduct[] }) {
           )}
         </div>
 
-        <div className="mt-7 grid gap-x-5 gap-y-9 sm:mt-8 sm:grid-cols-2 sm:gap-y-10 lg:grid-cols-3">
+        {/*
+          Grid katalog. Di ponsel dua kolom (bukan satu kartu selebar layar):
+          empat produk terlihat sekaligus saat digulir, pola yang lazim di
+          e-commerce. Kolom bertambah 3 → 4 seiring lebar layar.
+        */}
+        <div className="mt-7 grid grid-cols-2 gap-x-3 gap-y-8 sm:mt-8 sm:grid-cols-3 sm:gap-x-5 sm:gap-y-10 lg:grid-cols-4">
           {visible.map((product, index) => {
             const availability = resolveAvailability(product);
             const meta = availabilityCopy[availability];
             const soldOut =
               availability === "sold_out" || availability === "archive";
             return (
-              <Reveal key={product.id} delay={(index % 3) * 90} as="article">
+              <Reveal key={product.id} delay={(index % 2) * 80} as="article">
                 <button
                   type="button"
+                  aria-haspopup="dialog"
                   onClick={() => setSelected(product)}
                   className="group block w-full text-left"
                 >
@@ -208,7 +214,7 @@ export function Collection({ products }: { products: CollectionProduct[] }) {
                       src={product.imageUrl}
                       alt={`${product.name} — ${product.colorway}`}
                       fill
-                      sizes="(min-width: 1024px) 31vw, (min-width: 640px) 46vw, 92vw"
+                      sizes="(min-width: 1024px) 24vw, (min-width: 640px) 32vw, 47vw"
                       className={`object-cover transition-all duration-700 ${
                         soldOut
                           ? "grayscale-[0.72] opacity-70 group-hover:opacity-85"
@@ -217,28 +223,39 @@ export function Collection({ products }: { products: CollectionProduct[] }) {
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-ink/75 via-transparent to-ink/10" />
 
-                    <div className="absolute left-3 top-3 flex items-center gap-2 border border-paper/20 bg-ink/50 px-2.5 py-1 backdrop-blur-md">
+                    {/* Chip ketersediaan: versi ringkas di ponsel supaya tidak
+                        menabrak tepi kartu selebar ~154px. */}
+                    <div className="absolute left-2 top-2 flex items-center gap-1.5 border border-paper/20 bg-ink/55 px-1.5 py-1 backdrop-blur-md sm:left-3 sm:top-3 sm:gap-2 sm:px-2.5">
                       <span className={`h-1 w-1 rounded-full ${meta.dot}`} />
-                      <span className="text-[0.55rem] font-medium uppercase tracking-[0.18em] text-paper/85">
+                      <span className="text-[0.58rem] font-medium uppercase tracking-[0.12em] text-paper/85 sm:tracking-[0.18em]">
                         {meta.label}
                       </span>
                     </div>
 
+                    {/*
+                      Pita "Studio pick": di ponsel ditaruh kanan-bawah (baris
+                      nama koleksi di situ memang disembunyikan). Dari `sm`
+                      sampai `lg` dua label di atas gambar bertabrakan dengan
+                      chip ketersediaan, jadi pita disembunyikan lalu muncul
+                      lagi di kanan-atas mulai `xl` (kartu ≥ ~277px).
+                    */}
                     {product.featured && !soldOut && (
-                      <div className="absolute right-3 top-3 border border-brass/40 bg-ink/50 px-2 py-1 text-[0.52rem] uppercase tracking-[0.18em] text-brass-light backdrop-blur-md">
+                      <div className="absolute bottom-2 right-2 border border-brass/40 bg-ink/60 px-1.5 py-1 text-[0.55rem] uppercase tracking-[0.14em] text-brass-light backdrop-blur-md sm:hidden xl:right-3 xl:top-3 xl:bottom-auto xl:block xl:px-2 xl:tracking-[0.18em]">
                         Studio pick
                       </div>
                     )}
 
                     {soldOut && (
                       <div className="absolute inset-0 flex items-center justify-center">
-                        <span className="border border-paper/30 bg-ink/70 px-5 py-2 text-[0.62rem] uppercase tracking-[0.28em] text-paper/80 backdrop-blur-sm">
+                        <span className="border border-paper/30 bg-ink/70 px-3 py-1.5 text-[0.55rem] uppercase tracking-[0.18em] text-paper/80 backdrop-blur-sm sm:px-5 sm:py-2 sm:text-[0.62rem] sm:tracking-[0.28em]">
                           {availability === "archive" ? "Archive" : "Sold out"}
                         </span>
                       </div>
                     )}
 
-                    <div className="absolute inset-x-0 bottom-0 flex items-center justify-between p-4">
+                    {/* Nama koleksi + panah hanya di layar lebar; di ponsel
+                        keduanya memakan ruang gambar tanpa menambah info. */}
+                    <div className="absolute inset-x-0 bottom-0 hidden items-center justify-between p-4 sm:flex">
                       <span className="text-[0.58rem] uppercase tracking-[0.2em] text-paper/60">
                         {product.collectionName}
                       </span>
@@ -248,20 +265,22 @@ export function Collection({ products }: { products: CollectionProduct[] }) {
                     </div>
                   </div>
 
-                  <div className="mt-4 flex items-start justify-between gap-4">
-                    <div>
-                      <h3 className="font-display text-[1.12rem] leading-tight text-paper transition-colors group-hover:text-brass-light">
+                  <div className="mt-2.5 flex flex-col sm:mt-4 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+                    <div className="min-w-0">
+                      <h3 className="truncate font-display text-[0.95rem] leading-tight text-paper transition-colors group-hover:text-brass-light sm:text-[1.12rem]">
                         {product.name}
                       </h3>
-                      <p className="mt-1 text-[0.62rem] uppercase tracking-[0.16em] text-mute">
+                      <p className="mt-0.5 truncate text-[0.58rem] uppercase tracking-[0.12em] text-mute sm:mt-1 sm:text-[0.62rem] sm:tracking-[0.16em]">
                         {product.colorway} · {product.leather}
                       </p>
                     </div>
-                    <div className="text-right">
-                      <p className="text-[0.82rem] text-paper/85">
+                    {/* Harga & status ditumpuk di ponsel: pada kartu ~154px,
+                        "Rp 4.850.000" + "6–8 week build" tidak muat sebaris. */}
+                    <div className="mt-1 flex flex-col gap-0.5 sm:mt-0 sm:block sm:shrink-0 sm:text-right">
+                      <p className="whitespace-nowrap text-[0.74rem] tabular-nums text-paper/85 sm:text-[0.82rem]">
                         {formatIdr(product.priceIdr)}
                       </p>
-                      <p className="mt-1 text-[0.58rem] uppercase tracking-[0.14em] text-mute/80">
+                      <p className="whitespace-nowrap text-[0.58rem] uppercase tracking-[0.1em] text-mute/80 sm:mt-1 sm:tracking-[0.14em]">
                         {availability === "made_to_order"
                           ? "6–8 week build"
                           : soldOut
