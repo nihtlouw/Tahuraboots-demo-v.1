@@ -152,6 +152,7 @@ Semua tabel punya index untuk kolom yang dipakai filter/sortir CRM (`status`,
 | `npm run pages:build` | Rekam snapshot UI statis ke `docs/` untuk GitHub Pages (butuh server jalan di :3000). |
 | `python3 scripts/ig-restore.py` | Restorasi AI foto katalog: Real-ESRGAN x4 → 1160 px → tone match ke foto lama. Butuh `pillow numpy opencv-python-headless onnxruntime`; model 64 MB diunduh otomatis ke `.cache/ig-models/`. |
 | `python tools/promo/promo.py render` | Render video promo 46,8 dtk (1920×1080, H.264/AAC) dari brand + foto + data asli ke `promo-out/`. Butuh `pillow numpy imageio-ffmpeg fonttools brotli`; jalankan `tools/promo/make_fonts.py` sekali dulu. |
+| `python tools/promo/promo_portrait.py render` | Versi vertikal 9:16 (1080×1920, 33,6 dtk) untuk TikTok/Reels/Shorts, aman dari UI platform. |
 
 ### Fitur CRM
 
