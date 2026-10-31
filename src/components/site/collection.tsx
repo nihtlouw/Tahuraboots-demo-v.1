@@ -195,7 +195,7 @@ export function Collection({ products }: { products: CollectionProduct[] }) {
           empat produk terlihat sekaligus saat digulir, pola yang lazim di
           e-commerce. Kolom bertambah 3 → 4 seiring lebar layar.
         */}
-        <div className="mt-7 grid grid-cols-2 gap-x-3 gap-y-8 sm:mt-8 sm:grid-cols-3 sm:gap-x-5 sm:gap-y-10 lg:grid-cols-4">
+        <div className="mt-7 grid grid-cols-2 gap-x-3 gap-y-6 sm:mt-8 sm:grid-cols-3 sm:gap-x-5 sm:gap-y-10 lg:grid-cols-4">
           {visible.map((product, index) => {
             const availability = resolveAvailability(product);
             const meta = availabilityCopy[availability];
@@ -209,7 +209,16 @@ export function Collection({ products }: { products: CollectionProduct[] }) {
                   onClick={() => setSelected(product)}
                   className="group block w-full text-left"
                 >
-                  <div className="hover-zoom relative aspect-[4/5] w-full overflow-hidden bg-ink-3">
+                  {/*
+                    Rasio gambar: kotak (1:1) di ponsel supaya satu baris grid
+                    hanya setinggi kartunya sendiri — 4:5 membuat tiap kartu
+                    ~19% lebih tinggi sehingga hanya 3 produk terlihat. Mulai
+                    `sm` kembali 4:5 karena kolomnya jauh lebih lebar.
+                    Foto katalog 12 style sudah 1160×1160; delapan foto model
+                    lama (928×1152) sudah dicek satu per satu — sepatunya utuh
+                    di dalam crop tengah.
+                  */}
+                  <div className="hover-zoom relative aspect-square w-full overflow-hidden bg-ink-3 sm:aspect-[4/5]">
                     <Image
                       src={product.imageUrl}
                       alt={`${product.name} — ${product.colorway}`}
